@@ -6101,19 +6101,17 @@
     if (!filtered.length) filtered = list;
     if (!filtered.length) return;
 
-    // Persist daily challenge selection — same challenge all day
-    var todayKey = (function() {
-      var d = new Date(); 
-      return 'rp_dc_' + d.getFullYear() + '_' + d.getMonth() + '_' + d.getDate() + '_' + (currentDailyCat||'any') + '_' + (currentDailyDiff||'any');
-    })();
-    var savedIdx = localStorage.getItem(todayKey);
+    // Persist daily challenge — save by ID, not index
+    var d = new Date();
+    var todayKey = 'rp_dc_' + d.getFullYear() + '_' + d.getMonth() + '_' + d.getDate() + '_' + (currentDailyCat||'any') + '_' + (currentDailyDiff||'any');
+    var savedId = localStorage.getItem(todayKey);
     var c;
-    if (savedIdx !== null && filtered[parseInt(savedIdx)]) {
-      c = filtered[parseInt(savedIdx)];
-    } else {
-      var randIdx = Math.floor(Math.random() * filtered.length);
-      localStorage.setItem(todayKey, randIdx);
-      c = filtered[randIdx];
+    if (savedId) {
+      c = filtered.find(function(x) { return String(x.id) === savedId; });
+    }
+    if (!c) {
+      c = filtered[Math.floor(Math.random() * filtered.length)];
+      localStorage.setItem(todayKey, String(c.id));
     }
     window.currentDailyChallenge = c;
     var done = (window.completedChallenges || []).includes(c.id);
