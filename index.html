@@ -3361,7 +3361,7 @@
             if (el1) el1.textContent = dateStr;
             if (el2) el2.textContent = dateStr;
           } else if (pg === 'preferences') { showPreferences(); }
-          else { showDashboard(); updateMobileNav('dashboard'); }
+          else { document.body.classList.add('logged-in'); showDashboard(); updateMobileNav('dashboard'); }
         } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
           if (!session) {
             sessionResolved = true;
@@ -3392,7 +3392,7 @@
           if (el1) el1.textContent = dateStr;
           if (el2) el2.textContent = dateStr;
         } else if (pg === 'preferences') { showPreferences(); }
-        else { showDashboard(); updateMobileNav('dashboard'); }
+        else { document.body.classList.add('logged-in'); showDashboard(); updateMobileNav('dashboard'); }
       }
 
       // Safety timeout
@@ -3422,32 +3422,27 @@
     btn.disabled = true;
 
     try {
-      console.log('DEBUG: initSupabase...');
       await initSupabase();
       if (!rpClient) throw new Error('Connection failed');
-      console.log('DEBUG: calling signInWithPassword...');
 
       const { data, error } = await rpClient.auth.signInWithPassword({ email, password });
-      console.log('DEBUG: signIn result - error:', error, 'user:', data?.user?.id);
 
       if (error) {
         err.textContent = error.message === 'Invalid login credentials' ? 'Wrong email or password.' : error.message;
         err.style.display = 'block';
       } else {
-        console.log('DEBUG: login OK, calling checkSubscription...');
         const name = data.user.user_metadata?.full_name || data.user.email;
         document.getElementById('user-name').textContent = name.split(' ')[0];
         document.getElementById('user-avatar').textContent = name[0].toUpperCase();
+        // Add logged-in immediately — before any async calls — so iOS nav shows
+        document.body.classList.add('logged-in');
         await checkSubscription(data.user.id);
-        console.log('DEBUG: checkSubscription done, calling showDashboard...');
         const _p = new URLSearchParams(window.location.search).get('page');
         if (_p === 'commit') showCommit();
         else if (_p === 'preferences') showPreferences();
         else { showDashboard(); updateMobileNav('dashboard'); }
-        console.log('DEBUG: showDashboard called');
       }
     } catch(e) {
-      console.log('DEBUG: CATCH ERROR:', e.message, e.stack);
       err.textContent = '⚠ Something went wrong: ' + e.message;
       err.style.display = 'block';
     }
@@ -6106,7 +6101,20 @@
     if (!filtered.length) filtered = list;
     if (!filtered.length) return;
 
-    var c = filtered[Math.floor(Math.random() * filtered.length)];
+    // Persist daily challenge selection — same challenge all day
+    var todayKey = (function() {
+      var d = new Date(); 
+      return 'rp_dc_' + d.getFullYear() + '_' + d.getMonth() + '_' + d.getDate() + '_' + (currentDailyCat||'any') + '_' + (currentDailyDiff||'any');
+    })();
+    var savedIdx = localStorage.getItem(todayKey);
+    var c;
+    if (savedIdx !== null && filtered[parseInt(savedIdx)]) {
+      c = filtered[parseInt(savedIdx)];
+    } else {
+      var randIdx = Math.floor(Math.random() * filtered.length);
+      localStorage.setItem(todayKey, randIdx);
+      c = filtered[randIdx];
+    }
     window.currentDailyChallenge = c;
     var done = (window.completedChallenges || []).includes(c.id);
     var catColor = c.cat==='Fitness' ? '#cc0000' : c.cat==='Nutrition' ? '#4caf50' : '#7c6af7';
