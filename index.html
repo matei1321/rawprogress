@@ -1,0 +1,2654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Raw Progress — Everyone Needs A Little Push</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --red: #cc0000;
+      --red-hot: #ff1a1a;
+      --red-dark: #8b0000;
+      --black: #0a0a0a;
+      --black-2: #111111;
+      --black-3: #1a1a1a;
+      --white: #f5f0eb;
+      --gray: #888;
+      --gray-light: #444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* CUSTOM CURSOR */
+    .cursor {
+      position: fixed; width: 12px; height: 12px;
+      background: #cc0000; border-radius: 50%;
+      pointer-events: none; z-index: 9999;
+      top: 0; left: 0;
+      margin-left: -6px; margin-top: -6px;
+      transition: none;
+    }
+    .cursor-ring {
+      position: fixed; width: 36px; height: 36px;
+      border: 1px solid rgba(204,0,0,0.5); border-radius: 50%;
+      pointer-events: none; z-index: 9998;
+      top: 0; left: 0;
+      margin-left: -18px; margin-top: -18px;
+      transition: left 0.08s ease, top 0.08s ease;
+    }
+
+    /* ===================== PAGES ===================== */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: block; }
+
+    /* ===================== LANDING ===================== */
+    #page-landing {
+      position: relative;
+      background: var(--black);
+      overflow: hidden;
+    }
+
+    /* noise texture overlay */
+    #page-landing::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.4;
+    }
+
+    /* diagonal red slash */
+    .slash {
+      position: absolute;
+      top: -10vh; right: -5vw;
+      width: 60vw; height: 130vh;
+      background: linear-gradient(135deg, var(--red-dark) 0%, var(--red) 50%, transparent 100%);
+      transform: skewX(-12deg);
+      opacity: 0.08;
+      z-index: 0;
+    }
+
+    .landing-nav {
+      position: relative; z-index: 10;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 2rem 4rem;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem; letter-spacing: 3px;
+      color: var(--white);
+    }
+    .nav-logo span { color: var(--red); }
+    .nav-links { display: flex; gap: 2rem; align-items: center; }
+    .nav-links a {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gray); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 90vh;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      padding: 4rem 4rem 4rem 4rem;
+    }
+
+    .hero-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--red); margin-bottom: 1.5rem;
+      opacity: 0; animation: fadeUp 0.8s 0.2s forwards;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(5rem, 13vw, 14rem);
+      line-height: 0.88;
+      letter-spacing: -1px;
+      color: var(--white);
+      opacity: 0; animation: fadeUp 0.9s 0.4s forwards;
+    }
+    .hero-title .red { color: var(--red); display: block; }
+
+    .hero-motto {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(1rem, 2.5vw, 1.6rem);
+      font-weight: 300; letter-spacing: 6px; text-transform: uppercase;
+      color: var(--gray); margin-top: 2rem;
+      border-left: 3px solid var(--red); padding-left: 1.2rem;
+      opacity: 0; animation: fadeUp 0.9s 0.65s forwards;
+    }
+
+    .hero-sub {
+      max-width: 480px;
+      font-size: 1rem; line-height: 1.7;
+      color: #777; margin-top: 1.5rem;
+      opacity: 0; animation: fadeUp 0.9s 0.8s forwards;
+    }
+
+    .hero-actions {
+      display: flex; gap: 1.2rem; margin-top: 3rem;
+      opacity: 0; animation: fadeUp 0.9s 1s forwards;
+      flex-wrap: wrap; align-items: center;
+    }
+
+    .btn-primary {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.9rem; letter-spacing: 3px; text-transform: uppercase;
+      background: var(--red); color: var(--white);
+      border: none; padding: 1rem 2.5rem;
+      cursor: none; position: relative; overflow: hidden;
+      transition: background 0.25s, transform 0.15s;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
+    }
+    .btn-primary:hover { background: var(--red-hot); transform: translateY(-2px); }
+
+    .btn-ghost {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.9rem; letter-spacing: 3px; text-transform: uppercase;
+      background: transparent; color: var(--gray);
+      border: 1px solid #333; padding: 1rem 2.5rem;
+      cursor: none; transition: color 0.2s, border-color 0.2s, transform 0.15s;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
+    }
+    .btn-ghost:hover { color: var(--white); border-color: #666; transform: translateY(-2px); }
+
+    .price-tag {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 2px; color: var(--gray);
+      margin-top: 1rem;
+      opacity: 0; animation: fadeUp 0.9s 1.1s forwards;
+    }
+    .price-tag strong { color: var(--red); font-size: 1.1rem; }
+
+    /* pillars */
+    .pillars {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid #1e1e1e;
+    }
+    .pillar {
+      padding: 3rem 2.5rem;
+      border-right: 1px solid #1e1e1e;
+      opacity: 0; animation: fadeUp 0.8s forwards;
+    }
+    .pillar:nth-child(1) { animation-delay: 1.2s; }
+    .pillar:nth-child(2) { animation-delay: 1.4s; }
+    .pillar:nth-child(3) { animation-delay: 1.6s; border-right: none; }
+    .pillar-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3rem; color: var(--red); opacity: 0.3;
+      line-height: 1;
+    }
+    .pillar-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.2rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--white); margin: 0.5rem 0;
+    }
+    .pillar p { font-size: 0.88rem; color: #666; line-height: 1.6; }
+
+    /* scroll indicator */
+    .scroll-hint {
+      position: absolute; bottom: 2rem; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+      z-index: 10; opacity: 0; animation: fadeIn 1s 1.8s forwards;
+    }
+    .scroll-hint span {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: #444;
+    }
+    .scroll-line {
+      width: 1px; height: 40px; background: linear-gradient(to bottom, var(--red), transparent);
+      animation: scrollPulse 1.5s infinite;
+    }
+
+    /* ===================== LOGIN PAGE ===================== */
+    #page-login {
+      min-height: 100vh;
+      background: var(--black);
+      display: none;
+      position: relative;
+      overflow: hidden;
+    }
+    #page-login.active { display: flex; align-items: center; justify-content: center; }
+
+    .login-bg-text {
+      position: absolute;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30vw; color: transparent;
+      -webkit-text-stroke: 1px rgba(204,0,0,0.06);
+      user-select: none; line-height: 1;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      white-space: nowrap; z-index: 0;
+    }
+
+    .login-box {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 440px;
+      padding: 3.5rem;
+      background: rgba(17,17,17,0.95);
+      border: 1px solid #222;
+      border-top: 3px solid var(--red);
+    }
+    .login-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem; letter-spacing: 3px;
+      color: var(--white); margin-bottom: 0.4rem;
+      text-align: center;
+    }
+    .login-logo span { color: var(--red); }
+    .login-tagline {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--gray); text-align: center; margin-bottom: 2.5rem;
+    }
+    .login-tabs {
+      display: flex; margin-bottom: 2rem;
+      border-bottom: 1px solid #222;
+    }
+    .tab-btn {
+      flex: 1; padding: 0.8rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase;
+      background: none; border: none; color: #555; cursor: none;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      margin-bottom: -1px;
+    }
+    .tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label {
+      display: block;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #555; margin-bottom: 0.4rem;
+    }
+    .form-group input {
+      width: 100%; padding: 0.85rem 1rem;
+      background: #0d0d0d; border: 1px solid #2a2a2a;
+      color: var(--white); font-family: 'Barlow', sans-serif; font-size: 0.95rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--red); }
+    .form-group input::placeholder { color: #333; }
+
+    .login-submit {
+      width: 100%; margin-top: 1.5rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.9rem; letter-spacing: 3px; text-transform: uppercase;
+      background: var(--red); color: var(--white);
+      border: none; padding: 1rem;
+      cursor: none; transition: background 0.2s;
+    }
+    .login-submit:hover { background: var(--red-hot); }
+
+    .login-back {
+      display: block; text-align: center; margin-top: 1.5rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #444; cursor: none; text-decoration: none;
+      transition: color 0.2s;
+    }
+    .login-back:hover { color: var(--gray); }
+
+    .signup-note {
+      margin-top: 1.5rem; padding: 1rem;
+      background: rgba(204,0,0,0.06); border-left: 2px solid var(--red);
+      font-size: 0.82rem; color: #666; line-height: 1.5;
+    }
+    .signup-note strong { color: var(--red); }
+
+    /* ===================== DASHBOARD ===================== */
+    #page-dashboard {
+      min-height: 100vh;
+      background: var(--black);
+      display: none;
+    }
+    #page-dashboard.active { display: block; }
+
+    .dash-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.2rem 3rem;
+      background: var(--black-2);
+      border-bottom: 1px solid #1a1a1a;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .dash-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 3px; color: var(--white);
+    }
+    .dash-logo span { color: var(--red); }
+    .dash-nav-right { display: flex; gap: 2rem; align-items: center; }
+    .dash-nav-link {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #555; cursor: none; transition: color 0.2s;
+    }
+    .dash-nav-link:hover, .dash-nav-link.active-link { color: var(--white); }
+    .user-chip {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 1px;
+      color: var(--gray);
+    }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--red); display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; color: var(--white);
+    }
+    .logout-btn {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase;
+      background: none; border: 1px solid #2a2a2a; color: #555;
+      padding: 0.4rem 1rem; cursor: none; transition: all 0.2s;
+    }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    .dash-hero {
+      padding: 3rem 3rem 2rem;
+      background: linear-gradient(135deg, #0d0d0d 0%, var(--black) 100%);
+      border-bottom: 1px solid #1a1a1a;
+      position: relative; overflow: hidden;
+    }
+    .dash-hero::after {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 40%; height: 100%;
+      background: linear-gradient(135deg, transparent, rgba(204,0,0,0.04));
+    }
+    .greeting {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--red); margin-bottom: 0.5rem;
+    }
+    .dash-headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      color: var(--white); line-height: 1;
+    }
+    .dash-date {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #444; margin-top: 0.5rem;
+    }
+
+    /* QUOTE TICKER */
+    .quote-bar {
+      background: var(--red); padding: 0.7rem 2rem;
+      overflow: hidden; white-space: nowrap;
+    }
+    .quote-ticker {
+      display: inline-block;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--white);
+      animation: ticker 30s linear infinite;
+    }
+
+    /* MAIN QUOTE */
+    .quote-section {
+      padding: 2.5rem 3rem;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .quote-card {
+      background: var(--black-2);
+      border: 1px solid #1e1e1e;
+      border-left: 4px solid var(--red);
+      padding: 2.5rem;
+      position: relative;
+    }
+    .quote-icon {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 6rem; color: rgba(204,0,0,0.08);
+      position: absolute; top: -1rem; left: 1.5rem;
+      line-height: 1;
+    }
+    .quote-text {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-weight: 600; line-height: 1.3;
+      color: var(--white); margin-bottom: 1rem;
+      position: relative; z-index: 1;
+    }
+    .quote-author {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--red);
+    }
+    .quote-refresh {
+      display: inline-block; margin-top: 1.2rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #444; cursor: none;
+      background: none; border: 1px solid #222; padding: 0.4rem 1rem;
+      transition: all 0.2s;
+    }
+    .quote-refresh:hover { color: var(--red); border-color: var(--red); }
+
+    /* CHALLENGES */
+    .challenges-section {
+      padding: 2.5rem 3rem;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 1.5rem;
+    }
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem; letter-spacing: 2px; color: var(--white);
+    }
+    .section-badge {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--red); background: rgba(204,0,0,0.1);
+      border: 1px solid rgba(204,0,0,0.2);
+      padding: 0.25rem 0.8rem;
+    }
+
+    .challenge-tabs {
+      display: flex; gap: 0; margin-bottom: 2rem;
+      border-bottom: 1px solid #1e1e1e;
+    }
+    .ctab {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+      background: none; border: none; color: #444;
+      padding: 0.7rem 1.5rem; cursor: none;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s; margin-bottom: -1px;
+    }
+    .ctab.active { color: var(--red); border-bottom-color: var(--red); }
+    .ctab:hover:not(.active) { color: #888; }
+
+    .challenge-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1px; background: #1a1a1a;
+    }
+    .challenge-card {
+      background: var(--black-2);
+      padding: 1.8rem;
+      position: relative; overflow: hidden;
+      transition: background 0.2s;
+    }
+    .challenge-card:hover { background: #141414; }
+    .challenge-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--red); opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .challenge-card:hover::before { opacity: 1; }
+
+    .challenge-locked {
+      position: absolute; top: 1rem; right: 1rem;
+      width: 28px; height: 28px;
+      background: rgba(204,0,0,0.1);
+      border: 1px solid rgba(204,0,0,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+    .challenge-cat {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--red); margin-bottom: 0.5rem;
+    }
+    .challenge-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--white); margin-bottom: 0.5rem;
+    }
+    .challenge-desc {
+      font-size: 0.85rem; color: #555; line-height: 1.6;
+      margin-bottom: 1.2rem;
+    }
+    .challenge-meta {
+      display: flex; gap: 1rem; align-items: center;
+    }
+    .challenge-xp {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem; color: var(--red);
+    }
+    .challenge-xp span {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.65rem; letter-spacing: 1px; color: #444;
+    }
+    .challenge-diff {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .diff-easy { color: #4caf50; }
+    .diff-med { color: #ff9800; }
+    .diff-hard { color: var(--red); }
+
+    .locked-overlay {
+      position: absolute; inset: 0;
+      background: #0f0f0f;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0.5rem;
+      border: 1px solid #1e1e1e;
+    }
+    .locked-overlay span {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase;
+      color: #444;
+    }
+    .locked-overlay .lock-icon { font-size: 2rem; opacity: 0.4; }
+    .unlock-btn {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase;
+      background: var(--red); color: var(--white);
+      border: none; padding: 0.6rem 1.4rem;
+      cursor: none; margin-top: 0.8rem;
+      transition: background 0.2s;
+    }
+    .unlock-btn:hover { background: var(--red-hot); }
+
+    /* STATS ROW */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: #1a1a1a;
+      margin: 2.5rem 3rem;
+      border: 1px solid #1a1a1a;
+    }
+    .stat-card {
+      background: var(--black-2); padding: 1.5rem 2rem;
+    }
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem; color: var(--red);
+    }
+    .stat-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #444; margin-top: 0.2rem;
+    }
+
+    /* SOCIAL */
+    .social-footer {
+      padding: 2rem 3rem;
+      border-top: 1px solid #1a1a1a;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .social-text {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #444;
+    }
+    .social-links { display: flex; gap: 1rem; }
+    .social-link {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+      color: #444; cursor: none; text-decoration: none;
+      border: 1px solid #222; padding: 0.4rem 1rem;
+      transition: all 0.2s;
+    }
+    .social-link:hover { color: var(--white); border-color: #444; }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(0.8); }
+      50% { opacity: 1; transform: scaleY(1); }
+    }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* CHALLENGE PANELS */
+    .challenge-panel { display: none; }
+    .challenge-panel.active { display: grid; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .landing-nav, .hero { padding: 1.5rem; }
+      .pillars { grid-template-columns: 1fr; }
+      .pillar { border-right: none; border-bottom: 1px solid #1e1e1e; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); margin: 1.5rem; }
+      .challenges-section, .quote-section { padding: 1.5rem; }
+      .dash-nav { padding: 1rem 1.5rem; }
+      .social-footer { flex-direction: column; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ===== LANDING PAGE ===== -->
+<div id="page-landing" class="page active">
+  <div class="slash"></div>
+
+  <nav class="landing-nav">
+    <div class="nav-logo">RAW<span>.</span>PROGRESS</div>
+    <div class="nav-links">
+      <a href="#">About</a>
+      <a href="#">Movement</a>
+      <a href="#">Pricing</a>
+      <button class="btn-ghost" style="padding:0.6rem 1.5rem;font-size:0.8rem;" onclick="showLogin()">SIGN IN</button>
+    </div>
+  </nav>
+
+  <!-- HOOK SECTION -->
+  <section class="hero">
+    <p class="hero-label">// Wake up call</p>
+    <h1 class="hero-title">
+      YOU'VE
+      <span class="red">SPENT</span>
+      ENOUGH.
+    </h1>
+    <p class="hero-motto">Everyone needs a little push.</p>
+    <p class="hero-sub">
+      $60/month gym membership. $200 smartwatch. $80 supplements. $40 meal plan app.
+      And yet — you went to the gym 4 times this month. Sound familiar?
+    </p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="showSignup()">STOP WASTING MONEY →</button>
+      <button class="btn-ghost" onclick="showLogin()">I ALREADY BELONG</button>
+    </div>
+    <p class="price-tag">Raw Progress is <strong>$6.99/month.</strong> That's it.</p>
+  </section>
+
+  <!-- REALITY CHECK SECTION -->
+  <div style="position:relative;z-index:1;padding:4rem;background:#0d0d0d;border-top:1px solid #1e1e1e;border-bottom:1px solid #1e1e1e;">
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:2rem;opacity:0;animation:fadeUp 0.8s 0.3s forwards;">// The real problem</p>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4rem);color:var(--white);line-height:1;margin-bottom:2rem;opacity:0;animation:fadeUp 0.8s 0.5s forwards;">IT'S NOT ABOUT THE MONEY.<br><span style="color:var(--red);">IT'S ABOUT THE MINDSET.</span></h2>
+    <p style="max-width:600px;font-size:1.05rem;line-height:1.8;color:#666;opacity:0;animation:fadeUp 0.8s 0.7s forwards;">
+      You don't need more gear. You don't need a fancier app. You need discipline. 
+      You need someone to push you. You need a community that holds you accountable. 
+      The problem was never the gym — it was the version of you that walked in without a real reason to be there.
+    </p>
+  </div>
+
+  <!-- MONEY COMPARISON -->
+  <div style="position:relative;z-index:1;display:grid;grid-template-columns:1fr 1px 1fr;border-bottom:1px solid #1e1e1e;">
+    <div style="padding:3rem 4rem;">
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:#444;margin-bottom:1.5rem;">What you're spending now</p>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a;padding-bottom:0.8rem;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:1px;color:#555;">Gym membership</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#444;">$60/mo</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a;padding-bottom:0.8rem;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:1px;color:#555;">Fitness tracker</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#444;">$200 upfront</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a;padding-bottom:0.8rem;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:1px;color:#555;">Calorie tracking app</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#444;">$15/mo</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a;padding-bottom:0.8rem;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:1px;color:#555;">Supplements</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#444;">$80/mo</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-top:0.5rem;">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#333;">TOTAL</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#cc0000;">$155+/mo</span>
+        </div>
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;color:#333;letter-spacing:1px;">And you're still not showing up consistently.</p>
+      </div>
+    </div>
+    <div style="background:#1e1e1e;"></div>
+    <div style="padding:3rem 4rem;display:flex;flex-direction:column;justify-content:center;">
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:1.5rem;">What Raw Progress costs</p>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,10vw,8rem);color:var(--white);line-height:1;">$6<span style="color:var(--red)">.99</span></div>
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:2px;text-transform:uppercase;color:#555;margin-top:0.5rem;">Per month. No hidden fees.</p>
+      <p style="font-size:0.9rem;color:#444;line-height:1.7;margin-top:1.5rem;">Daily challenges. Weekly goals. Monthly transformation. A community that pushes you. All for less than a coffee.</p>
+      <button class="btn-primary" style="margin-top:2rem;width:fit-content;" onclick="showSignup()">JOIN FOR $6.99 →</button>
+    </div>
+  </div>
+
+  <!-- PILLARS -->
+  <div class="pillars">
+    <div class="pillar">
+      <div class="pillar-num">01</div>
+      <div class="pillar-title">Build Discipline</div>
+      <p>Daily challenges that train your mind first. Show up every day — that's where real change starts.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">02</div>
+      <div class="pillar-title">Eat Cleaner</div>
+      <p>No complicated diets. Simple, actionable nutrition goals built into your weekly challenges.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">03</div>
+      <div class="pillar-title">Get Pushed</div>
+      <p>Personal messages, community accountability, and challenges that evolve with you every month.</p>
+    </div>
+  </div>
+
+  <!-- FINAL CTA -->
+  <div style="position:relative;z-index:1;padding:5rem 4rem;text-align:center;border-top:1px solid #1e1e1e;">
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:1rem;">// The decision</p>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,5rem);color:var(--white);line-height:1;margin-bottom:1.5rem;">YOU'RE GOING TO SPEND THE<br><span style="color:var(--red);">MONEY ANYWAY.</span><br>SPEND IT WISELY.</h2>
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;color:#555;letter-spacing:2px;margin-bottom:3rem;">Join the movement. $6.99/month. Cancel anytime.</p>
+    <button class="btn-primary" style="font-size:1rem;padding:1.2rem 3rem;" onclick="showSignup()">START RAW PROGRESS TODAY →</button>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div id="page-login" class="page">
+  <div class="login-bg-text">BI</div>
+  <div class="login-box">
+    <div class="login-logo">RAW<span>.</span>PROGRESS</div>
+    <div class="login-tagline">Everyone needs a little push</div>
+
+    <div class="login-tabs">
+      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" id="tab-signup" onclick="switchTab('signup')">Join Now</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="form-login">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••"/>
+      </div>
+      <div id="login-error" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--red);margin-bottom:0.8rem;letter-spacing:1px;"></div>
+      <button class="login-submit" id="login-btn" onclick="handleLogin()">ENTER THE MOVEMENT →</button>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="form-signup" style="display:none;">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your name"/>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="signup-email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="Create a password (min 6 characters)"/>
+      </div>
+      <div class="signup-note">
+        Start with <strong>7 days free</strong>, then $6.99/month. Card required to begin trial.
+      </div>
+      <div id="signup-error" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--red);margin-bottom:0.8rem;letter-spacing:1px;"></div>
+      <div id="signup-success" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;color:#4caf50;margin-bottom:0.8rem;letter-spacing:1px;padding:0.8rem;border:1px solid #4caf5044;background:rgba(76,175,80,0.05);"></div>
+      <button class="login-submit" id="signup-btn" onclick="handleSignup()">START MY JOURNEY →</button>
+    </div>
+
+    <a class="login-back" onclick="showLanding()">← Back to Movement</a>
+  </div>
+</div>
+
+<!-- ===== SIGNUP PAGE ===== -->
+<div id="page-signup" class="page">
+  <div class="login-bg-text" style="color:transparent;-webkit-text-stroke:1px rgba(204,0,0,0.06);">RP</div>
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">
+    <div class="login-box" style="max-width:480px;">
+      <div class="login-logo">RAW<span>.</span>PROGRESS</div>
+      <div class="login-tagline">Start your 7-day free trial</div>
+
+      <!-- STEPS INDICATOR -->
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:2rem;">
+        <div style="flex:1;text-align:center;padding:0.6rem;border-bottom:2px solid var(--red);">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--red);">01 Create Account</span>
+        </div>
+        <div style="flex:1;text-align:center;padding:0.6rem;border-bottom:2px solid #222;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;">02 Payment</span>
+        </div>
+        <div style="flex:1;text-align:center;padding:0.6rem;border-bottom:2px solid #222;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;">03 Your Profile</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" placeholder="Your full name"/>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="reg-email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="At least 6 characters"/>
+      </div>
+
+      <div style="margin:1rem 0;padding:1rem;background:rgba(204,0,0,0.05);border-left:3px solid var(--red);">
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;color:#666;line-height:1.6;">
+          ✓ <strong style="color:var(--white);">7 days completely free</strong> — no charge until trial ends<br>
+          ✓ Cancel anytime before day 7 — pay nothing<br>
+          ✓ Full access to all challenges from day 1
+        </p>
+      </div>
+
+      <div id="reg-error" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--red);margin-bottom:0.8rem;letter-spacing:1px;padding:0.6rem;border:1px solid rgba(204,0,0,0.3);"></div>
+      <div id="reg-success" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;color:#4caf50;margin-bottom:0.8rem;letter-spacing:1px;padding:0.8rem;border:1px solid #4caf5044;background:rgba(76,175,80,0.05);line-height:1.6;"></div>
+
+      <button class="login-submit" id="reg-btn" onclick="handleRegister()">CREATE ACCOUNT & START TRIAL →</button>
+
+      <div style="margin-top:1.5rem;text-align:center;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:#444;">Already have an account?</span>
+        <a onclick="showLogin()" style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--red);cursor:none;margin-left:0.5rem;">Sign In</a>
+      </div>
+
+      <a class="login-back" onclick="showLanding()">← Back to Movement</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="page-dashboard" class="page">
+  <nav class="dash-nav">
+    <div class="dash-logo">RAW<span>.</span>PROGRESS</div>
+    <div class="dash-nav-right">
+      <span class="dash-nav-link active-link" id="nav-dashboard" onclick="showDashboard()">Dashboard</span>
+      <span class="dash-nav-link" id="nav-challenges" onclick="showChallenges()">Challenges</span>
+      <span class="dash-nav-link" id="nav-leaderboard" onclick="showLeaderboard()">Leaderboard</span>
+      <span class="dash-nav-link" id="nav-community">Community</span>
+      <span class="dash-nav-link" id="nav-profile" onclick="showProfile()">Profile</span>
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">Y</div>
+        <span id="user-name">You</span>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">LOG OUT</button>
+    </div>
+  </nav>
+
+  <!-- TICKER -->
+  <div class="quote-bar">
+    <span class="quote-ticker">
+      "THE ONLY BAD WORKOUT IS THE ONE THAT DIDN'T HAPPEN." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "DISCIPLINE IS FREEDOM." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "IT ALWAYS SEEMS IMPOSSIBLE UNTIL IT'S DONE." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "SWEAT IS JUST FAT CRYING." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "YOUR BODY CAN STAND ALMOST ANYTHING. IT'S YOUR MIND YOU HAVE TO CONVINCE." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "THE ONLY BAD WORKOUT IS THE ONE THAT DIDN'T HAPPEN." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "DISCIPLINE IS FREEDOM." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "IT ALWAYS SEEMS IMPOSSIBLE UNTIL IT'S DONE." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "SWEAT IS JUST FAT CRYING." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+      "YOUR BODY CAN STAND ALMOST ANYTHING. IT'S YOUR MIND YOU HAVE TO CONVINCE." &nbsp;&nbsp;&nbsp;///&nbsp;&nbsp;&nbsp; 
+    </span>
+  </div>
+
+  <div class="dash-hero">
+    <p class="greeting">// Day 1 of your journey</p>
+    <h2 class="dash-headline">WELCOME BACK.<br>DON'T STOP NOW.</h2>
+    <p class="dash-date" id="dash-date"></p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num">0</div>
+      <div class="stat-label">Challenges Done</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">1</div>
+      <div class="stat-label">Day Streak</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">0</div>
+      <div class="stat-label">XP Earned</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">∞</div>
+      <div class="stat-label">Potential</div>
+    </div>
+  </div>
+
+  <!-- DAILY QUOTE -->
+  <div class="quote-section">
+    <div class="section-header">
+      <div class="section-title">DAILY FUEL</div>
+      <div class="section-badge">MOTIVATION</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-icon">"</div>
+      <div class="quote-text" id="quote-text">
+        The pain you feel today will be the strength you feel tomorrow.
+      </div>
+      <div class="quote-author" id="quote-author">— Arnold Schwarzenegger</div>
+      <button class="quote-refresh" onclick="refreshQuote()">↺ NEW QUOTE</button>
+    </div>
+  </div>
+
+  <!-- CHALLENGES -->
+  <div class="challenges-section">
+    <div class="section-header">
+      <div class="section-title">CHALLENGES</div>
+      <div class="section-badge" id="challenges-badge">LOCKED UNTIL SUBSCRIBED</div>
+    </div>
+    <div class="challenge-tabs">
+      <button class="ctab active" onclick="switchChallenge('daily', this)">Daily</button>
+      <button class="ctab" onclick="switchChallenge('weekly', this)">Weekly</button>
+      <button class="ctab" onclick="switchChallenge('monthly', this)">Monthly</button>
+    </div>
+
+    <!-- DAILY -->
+    <div class="challenge-panel active challenge-grid" id="panel-daily">
+      <div class="challenge-card">
+        <div class="challenge-cat">Fitness</div>
+        <div class="challenge-name">100 Push-Up Grind</div>
+        <div class="challenge-desc">Complete 100 push-ups across the day. Break it up however you need. Track your sets. Just hit the number.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">50 <span>XP</span></div>
+          <div class="challenge-diff diff-easy">● Easy</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-cat">Nutrition</div>
+        <div class="challenge-name">No Processed Sugar</div>
+        <div class="challenge-desc">24 hours. No processed sugar. No sodas, no candy, no junk. Just clean fuel for your body.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">40 <span>XP</span></div>
+          <div class="challenge-diff diff-med">● Medium</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-cat">Mindset</div>
+        <div class="challenge-name">5AM Wake-Up Call</div>
+        <div class="challenge-desc">Set that alarm. Get up at 5AM and start your morning routine before most people open their eyes.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">60 <span>XP</span></div>
+          <div class="challenge-diff diff-hard">● Hard</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKLY -->
+    <div class="challenge-panel challenge-grid" id="panel-weekly">
+      <div class="challenge-card">
+        <div class="challenge-cat">Fitness</div>
+        <div class="challenge-name">Run 20 Miles This Week</div>
+        <div class="challenge-desc">Spread 20 miles across 7 days however you want. Walk, jog, sprint. Just hit the distance.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">200 <span>XP</span></div>
+          <div class="challenge-diff diff-med">● Medium</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-cat">Nutrition</div>
+        <div class="challenge-name">Meal Prep Sunday</div>
+        <div class="challenge-desc">Prep clean meals for 5 days straight. No takeout, no excuses. Your body gets what it needs.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">150 <span>XP</span></div>
+          <div class="challenge-diff diff-easy">● Easy</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-cat">Mindset</div>
+        <div class="challenge-name">Digital Detox Evening</div>
+        <div class="challenge-desc">Three evenings this week: no screens after 9PM. Read, stretch, journal. Protect your sleep.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">180 <span>XP</span></div>
+          <div class="challenge-diff diff-hard">● Hard</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY -->
+    <div class="challenge-panel challenge-grid" id="panel-monthly">
+      <div class="challenge-card">
+        <div class="challenge-cat">Fitness</div>
+        <div class="challenge-name">30-Day Body Transformation</div>
+        <div class="challenge-desc">A full month of progressive workouts. Track your progress, push harder each week, finish stronger than you started.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">1000 <span>XP</span></div>
+          <div class="challenge-diff diff-hard">● Hard</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-cat">Nutrition</div>
+        <div class="challenge-name">Clean Month Challenge</div>
+        <div class="challenge-desc">30 days of clean eating. Log every meal, hit your macros, and see what your body is actually capable of.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">800 <span>XP</span></div>
+          <div class="challenge-diff diff-med">● Medium</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-cat">Mindset</div>
+        <div class="challenge-name">Journaling Every Day</div>
+        <div class="challenge-desc">30 days, 30 entries. One page minimum. Track your thoughts, your growth, and what you're grateful for.</div>
+        <div class="challenge-meta">
+          <div class="challenge-xp">500 <span>XP</span></div>
+          <div class="challenge-diff diff-easy">● Easy</div>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <span>Subscription Required</span>
+          <button class="unlock-btn" onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')">UNLOCK $6.99/MO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOCIAL FOOTER -->
+  <div class="social-footer">
+    <div class="social-text">Follow the Movement</div>
+    <div class="social-links">
+      <a class="social-link" href="#">📱 Instagram</a>
+      <a class="social-link" href="#">🎵 TikTok</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- CUSTOM CURSOR ----
+  document.addEventListener('mousemove', function(e) {
+    var c = document.getElementById('cursor');
+    var r = document.getElementById('cursorRing');
+    if (c) { c.style.left = e.clientX + 'px'; c.style.top = e.clientY + 'px'; }
+    if (r) { r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px'; }
+  });
+
+  // ---- PAGE SWITCHING ----
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+  }
+  function showSignup() { showPage('page-signup'); }
+
+  async function handleRegister() {
+    const btn = document.getElementById('reg-btn');
+    const err = document.getElementById('reg-error');
+    const suc = document.getElementById('reg-success');
+
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+
+    err.style.display = 'none';
+    suc.style.display = 'none';
+
+    if (!name || !email || !password) {
+      err.textContent = '⚠ Please fill in all fields.';
+      err.style.display = 'block'; return;
+    }
+    if (password.length < 6) {
+      err.textContent = '⚠ Password must be at least 6 characters.';
+      err.style.display = 'block'; return;
+    }
+
+    btn.textContent = 'LOADING...';
+    btn.disabled = true;
+
+    try {
+      await initSupabase();
+
+      if (!rpClient) {
+        err.textContent = '⚠ Connection error. Please try again.';
+        err.style.display = 'block';
+        btn.textContent = 'CREATE ACCOUNT & START TRIAL →';
+        btn.disabled = false;
+        return;
+      }
+
+      btn.textContent = 'CREATING YOUR ACCOUNT...';
+
+      const { data, error } = await rpClient.auth.signUp({
+        email, password,
+        options: { data: { full_name: name } }
+      });
+
+      if (error) {
+        err.textContent = '⚠ ' + (error.message === 'User already registered' ? 'This email is already registered. Try signing in.' : error.message);
+        err.style.display = 'block';
+        btn.textContent = 'CREATE ACCOUNT & START TRIAL →';
+        btn.disabled = false;
+      } else {
+        suc.innerHTML = '✓ Account created for <strong>' + email + '</strong>!<br>Check your email to confirm, then proceed to payment.';
+        suc.style.display = 'block';
+        btn.textContent = 'PROCEED TO PAYMENT →';
+        btn.disabled = false;
+        btn.onclick = function() {
+          window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00', '_blank');
+        };
+      }
+    } catch(e) {
+      err.textContent = '⚠ Something went wrong: ' + e.message;
+      err.style.display = 'block';
+      btn.textContent = 'CREATE ACCOUNT & START TRIAL →';
+      btn.disabled = false;
+    }
+  }
+
+  function showLogin(tab) {
+    showPage('page-login');
+    if (tab === 'signup') switchTab('signup');
+    else switchTab('login');
+  }
+  function showLanding() { showPage('page-landing'); }
+  function showDashboard() {
+    showPage('page-dashboard');
+    setDashDate();
+    document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active-link'));
+    document.getElementById('nav-dashboard').classList.add('active-link');
+    // Show/hide locked overlays based on subscription
+    document.querySelectorAll('.locked-overlay').forEach(el => {
+      el.style.display = isSubscribed ? 'none' : 'flex';
+    });
+    const badge = document.getElementById('challenges-badge');
+    if (badge) badge.textContent = isSubscribed ? 'SUBSCRIBED ✓' : 'LOCKED UNTIL SUBSCRIBED';
+  }
+  function showChallenges() {
+    showPage('page-challenges');
+    document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active-link'));
+    document.getElementById('nav-challenges').classList.add('active-link');
+    // Show paywall if not subscribed
+    const paywall = document.getElementById('cp-paywall');
+    if (paywall) paywall.style.display = isSubscribed ? 'none' : 'flex';
+  }
+
+  // ---- LOGIN TABS ----
+  function switchTab(t) {
+    document.getElementById('tab-login').classList.toggle('active', t === 'login');
+    document.getElementById('tab-signup').classList.toggle('active', t === 'signup');
+    document.getElementById('form-login').style.display = t === 'login' ? 'block' : 'none';
+    document.getElementById('form-signup').style.display = t === 'signup' ? 'block' : 'none';
+  }
+
+  // ---- CHALLENGE TABS (dashboard) ----
+  function switchChallenge(type, btn) {
+    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.challenge-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + type).classList.add('active');
+  }
+
+  const allChallenges = {
+    daily: [
+      {id:1,cat:'Fitness',name:'100 Push-Up Grind',desc:'Complete 100 push-ups across the day. Break into sets of 10-20. Just hit 100.',diff:'Easy',xp:50,proof:true},
+      {id:2,cat:'Fitness',name:'1000 Step Climb',desc:'Find stairs anywhere. Climb 1000 steps total today.',diff:'Easy',xp:40,proof:true},
+      {id:3,cat:'Fitness',name:'30 Min Walk',desc:'Put your phone down and walk for 30 minutes straight. No music, no podcasts. Just move.',diff:'Easy',xp:30,proof:true},
+      {id:4,cat:'Fitness',name:'50 Burpees',desc:'50 burpees total today. Break them into sets. Non-negotiable.',diff:'Easy',xp:45,proof:true},
+      {id:5,cat:'Fitness',name:'150 Jumping Jacks',desc:'150 jumping jacks throughout the day. 3 sets of 50. Simple, effective, no excuses.',diff:'Easy',xp:30,proof:true},
+      {id:6,cat:'Fitness',name:'10 Min Stretching',desc:'Full body stretch for 10 minutes. Hold each position for 30 seconds. Your body needs this.',diff:'Easy',xp:20,proof:false},
+      {id:7,cat:'Fitness',name:'20 Min Yoga',desc:'20 minutes of yoga. Use YouTube if needed. Focus on breathing and form.',diff:'Easy',xp:35,proof:false},
+      {id:8,cat:'Fitness',name:'100 Sit-Ups',desc:'100 sit-ups today. Sets of 20-25. Core engagement is key.',diff:'Easy',xp:45,proof:true},
+      {id:9,cat:'Fitness',name:'5km Walk',desc:'Walk 5 kilometres today. Use your phone to track it. No running required.',diff:'Easy',xp:40,proof:true},
+      {id:10,cat:'Fitness',name:'50 Lunges',desc:'50 lunges — 25 each leg. Back straight, knees behind toes.',diff:'Easy',xp:35,proof:true},
+      {id:11,cat:'Fitness',name:'15 Min Jump Rope',desc:'Jump rope for 15 minutes total. Best cardio per minute. Simulate it if no rope.',diff:'Easy',xp:40,proof:true},
+      {id:12,cat:'Fitness',name:'200 Calf Raises',desc:'200 calf raises throughout the day. Do them anywhere — standing in line, at the desk.',diff:'Easy',xp:25,proof:false},
+      {id:13,cat:'Fitness',name:'30 Min Bike Ride',desc:'30 minutes on a bike — gym, outdoor, or stationary. Steady pace the whole way.',diff:'Easy',xp:45,proof:true},
+      {id:14,cat:'Fitness',name:'10 Min Plank Challenge',desc:'10 minutes total plank hold across the day. Front plank, side plank — mix it up.',diff:'Easy',xp:50,proof:true},
+      {id:15,cat:'Fitness',name:'100 Glute Bridges',desc:'100 glute bridges. Drive through heels. Squeeze at the top every rep.',diff:'Easy',xp:35,proof:false},
+      {id:16,cat:'Fitness',name:'30 Min Run',desc:'Lace up and run for 30 minutes non-stop. Pace does not matter. Just keep moving.',diff:'Medium',xp:70,proof:true},
+      {id:17,cat:'Fitness',name:'200 Squats',desc:'200 squats throughout the day. Break them up however you want — just finish.',diff:'Medium',xp:60,proof:true},
+      {id:18,cat:'Fitness',name:'Wall Sit 5 Min',desc:'5 minutes total wall sit. Break into sets. Your legs will burn — that is the point.',diff:'Medium',xp:55,proof:true},
+      {id:19,cat:'Fitness',name:'45 Min Workout',desc:'45 minutes of structured training. Gym, home workout, or calisthenics. Sweat is mandatory.',diff:'Medium',xp:80,proof:true},
+      {id:20,cat:'Fitness',name:'5km Run',desc:'Run 5 kilometres today. Track it. Time yourself. Beat it next time.',diff:'Medium',xp:85,proof:true},
+      {id:21,cat:'Fitness',name:'150 Push-Ups',desc:'150 push-ups across the day. Multiple variations welcome — wide, narrow, diamond.',diff:'Medium',xp:75,proof:true},
+      {id:22,cat:'Fitness',name:'100 Dips',desc:'100 tricep dips today. Use a chair, bench, or parallel bars. Lock out every rep.',diff:'Medium',xp:70,proof:true},
+      {id:23,cat:'Fitness',name:'300 Mountain Climbers',desc:'300 mountain climbers total. Sets of 50-100. Keep hips down throughout.',diff:'Medium',xp:65,proof:true},
+      {id:24,cat:'Fitness',name:'1 Hour Walk',desc:'Walk for a full hour today. Use it to think, plan, or decompress. Movement is medicine.',diff:'Medium',xp:55,proof:true},
+      {id:25,cat:'Fitness',name:'Swim 30 Laps',desc:'Hit the pool and swim 30 laps. Any stroke. Just finish all 30.',diff:'Medium',xp:90,proof:true},
+      {id:26,cat:'Fitness',name:'50 Box Jumps',desc:'50 box jumps today. Sturdy surface. Land soft, reset, explode up.',diff:'Medium',xp:75,proof:true},
+      {id:27,cat:'Fitness',name:'10km Bike Sprint',desc:'Bike 10 kilometres at a challenging pace. Push harder than feels comfortable.',diff:'Medium',xp:70,proof:true},
+      {id:28,cat:'Fitness',name:'100 Tricep Extensions',desc:'100 overhead tricep extensions. Use a weight that challenges you by rep 20.',diff:'Medium',xp:60,proof:true},
+      {id:29,cat:'Fitness',name:'HIIT 20 Minutes',desc:'20 minutes of HIIT — 40 seconds on, 20 off. 8-10 exercises, maximum effort.',diff:'Medium',xp:85,proof:true},
+      {id:30,cat:'Fitness',name:'50 Hanging Knee Raises',desc:'50 hanging knee raises. Hang from a bar, bring knees to chest. No swinging.',diff:'Medium',xp:70,proof:true},
+      {id:31,cat:'Fitness',name:'60 Min Workout',desc:'One full hour of training. Gym, home, park — your choice. No shortcuts.',diff:'Hard',xp:100,proof:true},
+      {id:32,cat:'Fitness',name:'50 Pull-Ups',desc:'50 pull-ups today. Bar at gym, park, or doorframe. Any grip counts.',diff:'Hard',xp:90,proof:true},
+      {id:33,cat:'Fitness',name:'10km Run',desc:'Run 10 kilometres today. No breaks. Track your time and try to beat it next time.',diff:'Hard',xp:130,proof:true},
+      {id:34,cat:'Fitness',name:'300 Push-Ups',desc:'300 push-ups today. Full day mission. Set a timer every hour and knock out 40.',diff:'Hard',xp:120,proof:true},
+      {id:35,cat:'Fitness',name:'500 Squats',desc:'500 squats today. Every hour, drop and do 60. Spread across the entire day.',diff:'Hard',xp:140,proof:true},
+      {id:36,cat:'Fitness',name:'75 Min Endurance Run',desc:'Run for 75 minutes at a steady, sustainable pace. Build your base.',diff:'Hard',xp:150,proof:true},
+      {id:37,cat:'Fitness',name:'100 Burpees',desc:'100 burpees today. All of them. No modifications. This is what commitment looks like.',diff:'Hard',xp:130,proof:true},
+      {id:38,cat:'Fitness',name:'200 Pull-Ups',desc:'200 pull-ups spread throughout the day. Every set counts. Every rep matters.',diff:'Hard',xp:160,proof:true},
+      {id:39,cat:'Fitness',name:'Murph Challenge',desc:'1 mile run, 100 pull-ups, 200 push-ups, 300 squats, 1 mile run. Break it up. Finish it.',diff:'Hard',xp:200,proof:true},
+      {id:40,cat:'Fitness',name:'2 Hour Active Day',desc:'2 hours of total physical activity today. Gym, running, sports, swimming — any combination.',diff:'Hard',xp:180,proof:true},
+      {id:41,cat:'Nutrition',name:'3 Litres of Water',desc:'Drink at least 3 litres of water today. Carry a bottle everywhere. No excuses.',diff:'Easy',xp:30,proof:false},
+      {id:42,cat:'Nutrition',name:'No Fast Food',desc:'Cook every meal today. Zero delivery, zero drive-through. Fuel your body properly.',diff:'Easy',xp:35,proof:false},
+      {id:43,cat:'Nutrition',name:'Eat 5 Portions of Veg',desc:'5 different vegetables today. Not supplements — real vegetables with real meals.',diff:'Easy',xp:30,proof:false},
+      {id:44,cat:'Nutrition',name:'No Soda Today',desc:'Replace every soda with water, sparkling water, or herbal tea. Just for today.',diff:'Easy',xp:25,proof:false},
+      {id:45,cat:'Nutrition',name:'Protein Breakfast',desc:'Start with a high-protein breakfast — eggs, Greek yogurt, cottage cheese, or protein shake.',diff:'Easy',xp:25,proof:false},
+      {id:46,cat:'Nutrition',name:'Cook From Scratch',desc:'Every meal today is cooked from raw ingredients. No packets, no sauces from a jar.',diff:'Easy',xp:40,proof:false},
+      {id:47,cat:'Nutrition',name:'No Snacking',desc:'Three meals only today. No snacks in between. Train your hunger signals to reset.',diff:'Easy',xp:35,proof:false},
+      {id:48,cat:'Nutrition',name:'Eat Slowly',desc:'Put your fork down between every bite. Take at least 20 minutes for every meal today.',diff:'Easy',xp:20,proof:false},
+      {id:49,cat:'Nutrition',name:'Green Smoothie',desc:'Make and drink one green smoothie today — spinach, banana, apple, water. Blend it.',diff:'Easy',xp:25,proof:false},
+      {id:50,cat:'Nutrition',name:'No Alcohol Today',desc:'Simple. Not a single drink today. Replace with sparkling water and lime.',diff:'Easy',xp:30,proof:false},
+      {id:51,cat:'Nutrition',name:'Track Your Macros',desc:'Log every meal today using MyFitnessPal. Know what you are actually putting in your body.',diff:'Easy',xp:30,proof:false},
+      {id:52,cat:'Nutrition',name:'Eat Breakfast Before 9AM',desc:'Get your metabolism going. A proper breakfast before 9AM — not a biscuit, a real meal.',diff:'Easy',xp:20,proof:false},
+      {id:53,cat:'Nutrition',name:'No Sauce or Dressing',desc:'Eat all meals today without any added sauces, dressings, or condiments. Taste the food.',diff:'Easy',xp:25,proof:false},
+      {id:54,cat:'Nutrition',name:'4 Litres of Water',desc:'Upgrade your hydration — 4 full litres today. Spread it evenly. Start before breakfast.',diff:'Easy',xp:40,proof:false},
+      {id:55,cat:'Nutrition',name:'Eat a Salad Meal',desc:'Replace one full meal today with a large, nutrient-dense salad. Real food, real fuel.',diff:'Easy',xp:25,proof:false},
+      {id:56,cat:'Nutrition',name:'No Sugar Today',desc:'24 hours with zero processed sugar. No sodas, no candy, no hidden sugar in sauces.',diff:'Medium',xp:50,proof:false},
+      {id:57,cat:'Nutrition',name:'No Carbs After 6PM',desc:'Cut all carbohydrates after 6PM today. Protein and vegetables only for dinner.',diff:'Medium',xp:45,proof:false},
+      {id:58,cat:'Nutrition',name:'Intermittent Fasting 16:8',desc:'Eat only within an 8-hour window today. Finish at 8PM, do not eat again until noon.',diff:'Medium',xp:60,proof:false},
+      {id:59,cat:'Nutrition',name:'1500 Calorie Day',desc:'Stay under 1500 calories today. Track everything. Make every calorie count.',diff:'Medium',xp:55,proof:false},
+      {id:60,cat:'Nutrition',name:'No Processed Food',desc:'Zero processed food today. If it came in a packet with more than 5 ingredients, skip it.',diff:'Medium',xp:60,proof:false},
+      {id:61,cat:'Nutrition',name:'High Protein Day',desc:'Hit 150g of protein today from food alone. Chicken, fish, eggs, legumes — plan your meals.',diff:'Medium',xp:55,proof:false},
+      {id:62,cat:'Nutrition',name:'Vegan Day',desc:'Eat completely plant-based for 24 hours. No meat, no dairy, no eggs. Challenge your habits.',diff:'Medium',xp:50,proof:false},
+      {id:63,cat:'Nutrition',name:'No Coffee Today',desc:'Skip the caffeine for one day. Replace with herbal tea or water. See how you actually feel.',diff:'Medium',xp:45,proof:false},
+      {id:64,cat:'Nutrition',name:'Meal Prep Tonight',desc:'Spend 45 minutes tonight prepping tomorrow meals. Containers, portioned, ready to go.',diff:'Medium',xp:50,proof:false},
+      {id:65,cat:'Nutrition',name:'No Salt Added',desc:'Do not add salt to anything today. Let yourself taste food in its natural state.',diff:'Medium',xp:40,proof:false},
+      {id:66,cat:'Nutrition',name:'24H Fasting',desc:'Water and electrolytes only for 24 hours. Resets your digestive system, triggers autophagy, sharpens mental clarity, and burns fat more efficiently than any diet.',diff:'Hard',xp:120,proof:false},
+      {id:67,cat:'Nutrition',name:'Zero Sugar Week Start',desc:'Today is Day 1. No sugar of any kind — not even fruit juice. Just whole food, no exceptions.',diff:'Hard',xp:100,proof:false},
+      {id:68,cat:'Nutrition',name:'1200 Calorie Day',desc:'Stay at 1200 calories today, all from clean whole foods. No cheating, no estimating.',diff:'Hard',xp:110,proof:false},
+      {id:69,cat:'Nutrition',name:'Raw Food Day',desc:'Eat only raw, uncooked food today. Fruits, vegetables, nuts, seeds. No cooking allowed.',diff:'Hard',xp:100,proof:false},
+      {id:70,cat:'Nutrition',name:'No Eating After 5PM',desc:'Finish your last meal by 5PM today. Nothing after that — just water. Test your willpower.',diff:'Hard',xp:90,proof:false},
+      {id:71,cat:'Mindset',name:'Write in Your Journal',desc:'One page minimum. Write about your day, your goals, what you are grateful for.',diff:'Easy',xp:25,proof:false},
+      {id:72,cat:'Mindset',name:'10 Min Meditation',desc:'Sit in silence for 10 minutes. Focus on breathing. Clear your head.',diff:'Easy',xp:30,proof:false},
+      {id:73,cat:'Mindset',name:'Read 20 Pages',desc:'Read 20 pages of a real book today. Not articles, not social media — a proper book.',diff:'Easy',xp:25,proof:false},
+      {id:74,cat:'Mindset',name:'Write 3 Gratitudes',desc:'Write down 3 specific things you are grateful for today. Be specific — not just "family".',diff:'Easy',xp:15,proof:false},
+      {id:75,cat:'Mindset',name:'No Phone First Hour',desc:'From the moment you wake up, stay off your phone for the first 60 minutes. Own your morning.',diff:'Easy',xp:35,proof:false},
+      {id:76,cat:'Mindset',name:'Compliment 3 People',desc:'Give genuine compliments to 3 different people today. Not generic — make them specific.',diff:'Easy',xp:20,proof:false},
+      {id:77,cat:'Mindset',name:'Listen to a Podcast',desc:'Listen to one full educational or motivational podcast episode today. Apply one thing you learn.',diff:'Easy',xp:20,proof:false},
+      {id:78,cat:'Mindset',name:'Declutter One Space',desc:'Spend 15 minutes decluttering one space — desk, wardrobe, or kitchen counter. Clean space, clear mind.',diff:'Easy',xp:25,proof:false},
+      {id:79,cat:'Mindset',name:'Call Someone You Care About',desc:'Call — not text — one person you care about today. Have a real conversation.',diff:'Easy',xp:20,proof:false},
+      {id:80,cat:'Mindset',name:'Plan Tomorrow Tonight',desc:'Before bed tonight, write out tomorrow schedule and top 3 priorities. Wake up with direction.',diff:'Easy',xp:25,proof:false},
+      {id:81,cat:'Mindset',name:'No Complaining Today',desc:'Go the entire day without complaining about anything. Not out loud, not in your head.',diff:'Easy',xp:40,proof:false},
+      {id:82,cat:'Mindset',name:'Learn Something New',desc:'Spend 20 minutes learning something completely new — a skill, a fact, a language word.',diff:'Easy',xp:25,proof:false},
+      {id:83,cat:'Mindset',name:'Visualization Session',desc:'Spend 10 minutes visualizing your ideal future in detail. Where you live, what you do, who you are.',diff:'Easy',xp:25,proof:false},
+      {id:84,cat:'Mindset',name:'Digital Detox Hour',desc:'One full hour today with no screens at all. Read, walk, think, cook. Just no screens.',diff:'Easy',xp:30,proof:false},
+      {id:85,cat:'Mindset',name:'Do One Thing You Have Been Avoiding',desc:'That thing you keep putting off — do it today. One task. Just start it and finish it.',diff:'Easy',xp:40,proof:false},
+      {id:86,cat:'Mindset',name:'5AM Wake-Up',desc:'Set that alarm. Own your morning before the world wakes up.',diff:'Medium',xp:80,proof:false},
+      {id:87,cat:'Mindset',name:'No Screen Before 9AM',desc:'Wake up and stay off your phone for the first hour. Read, stretch, think.',diff:'Medium',xp:50,proof:false},
+      {id:88,cat:'Mindset',name:'30 Min Meditation',desc:'30 minutes of uninterrupted meditation. Use an app if needed but stay present the whole time.',diff:'Medium',xp:60,proof:false},
+      {id:89,cat:'Mindset',name:'Read 50 Pages',desc:'Read 50 pages of a book today. Set aside the time — morning or evening. No interruptions.',diff:'Medium',xp:55,proof:false},
+      {id:90,cat:'Mindset',name:'Write Your Goals',desc:'Spend 30 minutes writing out your 1-year, 3-year, and 10-year goals in full detail. Be ambitious.',diff:'Medium',xp:50,proof:false},
+      {id:91,cat:'Mindset',name:'No Social Media Today',desc:'24 hours completely off Instagram, TikTok, Twitter, everything. Observe how you feel.',diff:'Medium',xp:70,proof:false},
+      {id:92,cat:'Mindset',name:'Cold Shower',desc:'End your shower with 3 full minutes of cold water. Breathe through it. Own it.',diff:'Medium',xp:60,proof:false},
+      {id:93,cat:'Mindset',name:'Write a Letter to Future Self',desc:'Write a letter to yourself to open in 1 year. Where will you be? What will you have achieved?',diff:'Medium',xp:50,proof:false},
+      {id:94,cat:'Mindset',name:'Spend the Day Alone',desc:'No socializing, no group activities. One full day by yourself — with your thoughts and goals.',diff:'Medium',xp:60,proof:false},
+      {id:95,cat:'Mindset',name:'Wake Up Without Alarm',desc:'Go to bed at 9:30PM and wake up naturally — no alarm. Train your sleep cycle.',diff:'Medium',xp:55,proof:false},
+      {id:96,cat:'Mindset',name:'Spend 0 Money Today',desc:'Go the entire day spending absolutely nothing. Eat from what you have. Test your resourcefulness.',diff:'Medium',xp:60,proof:false},
+      {id:97,cat:'Mindset',name:'No Negative Self-Talk',desc:'Every time you catch yourself thinking negatively, reframe it immediately. Discipline the mind.',diff:'Medium',xp:55,proof:false},
+      {id:98,cat:'Mindset',name:'Teach Someone Something',desc:'Share a skill or knowledge with another person today. Teaching is the best form of learning.',diff:'Medium',xp:45,proof:false},
+      {id:99,cat:'Mindset',name:'One Hour of Deep Work',desc:'One uninterrupted hour of your most important task. Phone off, door closed, full focus.',diff:'Medium',xp:60,proof:false},
+      {id:100,cat:'Mindset',name:'Fast from News Today',desc:'No news, no politics, no drama today. Give your mind a day off from the noise.',diff:'Medium',xp:45,proof:false},
+      {id:101,cat:'Mindset',name:'4AM Wake-Up',desc:'Set the alarm for 4AM. Get up immediately. No snooze. Use those hours before the world wakes.',diff:'Hard',xp:120,proof:false},
+      {id:102,cat:'Mindset',name:'24H Phone Detox',desc:'Turn off your phone completely for 24 hours. Tell people in advance. Exist without it.',diff:'Hard',xp:100,proof:false},
+      {id:103,cat:'Mindset',name:'Silence Challenge',desc:'Speak only when absolutely necessary today. Observe what silence reveals about your thoughts.',diff:'Hard',xp:90,proof:false},
+      {id:104,cat:'Mindset',name:'Confront One Fear',desc:'Do one thing today that genuinely scares you. Small or big — just do the thing you have been avoiding.',diff:'Hard',xp:110,proof:false},
+      {id:105,cat:'Mindset',name:'Write 1000 Words',desc:'Write 1000 words today — your story, your thoughts, your vision. No editing, just raw output.',diff:'Hard',xp:100,proof:false},
+      {id:106,cat:'Fitness',name:'Sprint Intervals',desc:'10 rounds of 30-second sprints with 30-second rest. Full effort every sprint.',diff:'Medium',xp:80,proof:true},
+      {id:107,cat:'Fitness',name:'100 Diamond Push-Ups',desc:'100 diamond push-ups today. Hands close, elbows tight. Best tricep builder.',diff:'Medium',xp:75,proof:true},
+      {id:108,cat:'Fitness',name:'Stair Run',desc:'Find the tallest staircase and run it 10 times without stopping. No elevator.',diff:'Medium',xp:85,proof:true},
+      {id:109,cat:'Fitness',name:'Plank 3 Minutes',desc:'Hold a plank for 3 continuous minutes. If you break, start over. Do not break.',diff:'Medium',xp:70,proof:true},
+      {id:110,cat:'Fitness',name:'150 Dips',desc:'150 tricep dips today. Chair, bench, or bars. Lock out fully at top every rep.',diff:'Medium',xp:80,proof:true},
+      {id:111,cat:'Fitness',name:'Bear Crawl 400m',desc:'Bear crawl 400 metres. Find a park or open space. Arms, core, legs — all of it.',diff:'Hard',xp:120,proof:true},
+      {id:112,cat:'Fitness',name:'400 Jumping Jacks',desc:'400 jumping jacks today. 4 sets of 100. Keep the pace high throughout.',diff:'Easy',xp:35,proof:false},
+      {id:113,cat:'Fitness',name:'Handstand Practice',desc:'Practice handstands for 15 minutes today. Use a wall. Work on balance, not just holding.',diff:'Hard',xp:90,proof:true},
+      {id:114,cat:'Fitness',name:'100 Bicycle Crunches',desc:'100 bicycle crunches. Slow and controlled. Feel every rep in your obliques.',diff:'Easy',xp:40,proof:false},
+      {id:115,cat:'Fitness',name:"Farmer's Walk",desc:'Carry heavy objects for 10 minutes total. Bags, dumbbells, kettlebells. Grip strength is everything.',diff:'Medium',xp:65,proof:true},
+      {id:116,cat:'Fitness',name:'Swim 1km',desc:'Swim 1 kilometre without stopping. Any stroke. Focus on technique and breathing.',diff:'Hard',xp:130,proof:true},
+      {id:117,cat:'Fitness',name:'50 Pistol Squats',desc:'50 pistol squats — 25 per leg. Use a wall for balance if needed.',diff:'Hard',xp:110,proof:true},
+      {id:118,cat:'Fitness',name:'Tabata Workout',desc:'8 rounds of 20 seconds full effort, 10 seconds rest. One exercise only. Give everything.',diff:'Medium',xp:75,proof:true},
+      {id:119,cat:'Fitness',name:'100 Arnold Press',desc:'100 Arnold presses with dumbbells. Full rotation from palms in to palms out.',diff:'Medium',xp:70,proof:true},
+      {id:120,cat:'Fitness',name:'Resistance Band Full Body',desc:'30 minutes of resistance band training — arms, legs, back, chest. Maximum tension.',diff:'Easy',xp:50,proof:true},
+      {id:121,cat:'Fitness',name:'100 Hip Thrusts',desc:'100 hip thrusts. Drive through your heels. Squeeze glutes hard at top.',diff:'Medium',xp:65,proof:true},
+      {id:122,cat:'Fitness',name:'20 Min Shadow Boxing',desc:'20 minutes of shadow boxing. Jab, cross, hook, uppercut. Move your feet. Stay light.',diff:'Medium',xp:70,proof:true},
+      {id:123,cat:'Fitness',name:'50 Hanging Leg Raises',desc:'50 hanging leg raises. Keep legs straight. Do not swing. Full control down.',diff:'Hard',xp:100,proof:true},
+      {id:124,cat:'Fitness',name:'200 Step-Ups',desc:'200 step-ups on a chair or bench — 100 each leg. Drive through heel, stand tall at top.',diff:'Medium',xp:70,proof:true},
+      {id:125,cat:'Fitness',name:'30 Min Rowing Machine',desc:'30 minutes on a rowing machine. Legs, core, arms in sequence.',diff:'Medium',xp:80,proof:true},
+      {id:126,cat:'Fitness',name:'100 Tricep Pushdowns',desc:'100 cable or band tricep pushdowns. Elbows locked to sides. Full lockout every rep.',diff:'Easy',xp:40,proof:false},
+      {id:127,cat:'Fitness',name:'Yoga Flow 45 Min',desc:'45 minutes of yoga flow. Mobility and breathing. Active recovery at its best.',diff:'Medium',xp:65,proof:false},
+      {id:128,cat:'Fitness',name:'200 Russian Twists',desc:'200 Russian twists. Keep feet off the floor the whole set.',diff:'Medium',xp:60,proof:true},
+      {id:129,cat:'Fitness',name:'Finish a Workout You Hate',desc:'Do the workout you always skip. The one you dread. That is exactly why you need to do it.',diff:'Hard',xp:110,proof:true},
+      {id:130,cat:'Fitness',name:'Walk 10km',desc:'Walk 10 kilometres today. Track it on your phone. About 2 hours — make the time.',diff:'Medium',xp:75,proof:true},
+      {id:131,cat:'Fitness',name:'100 Face Pulls',desc:'100 face pulls with band or cable. Pull to nose level. Squeeze rear delts.',diff:'Easy',xp:35,proof:false},
+      {id:132,cat:'Fitness',name:'Stretch Every Hour',desc:'Set a timer. Every hour today, stand up and stretch for 2 minutes.',diff:'Easy',xp:30,proof:false},
+      {id:133,cat:'Fitness',name:'100 Reverse Lunges',desc:'100 reverse lunges — 50 per leg. Step back, knee to floor, drive through front heel.',diff:'Medium',xp:65,proof:true},
+      {id:134,cat:'Fitness',name:'5 Min Burpee Test',desc:'How many burpees in 5 minutes? Full burpees, no modification. Record your score.',diff:'Hard',xp:100,proof:true},
+      {id:135,cat:'Fitness',name:'Push Pull Superset',desc:'10 rounds: 10 push-ups followed immediately by 10 rows. No rest between. 30 sec between rounds.',diff:'Hard',xp:115,proof:true},
+      {id:136,cat:'Fitness',name:'100 Kettlebell Swings',desc:'100 kettlebell swings. Hip drive, not arm lift. Keep your back flat throughout.',diff:'Medium',xp:80,proof:true},
+      {id:137,cat:'Fitness',name:'3km Time Trial',desc:'Run 3 kilometres as fast as you can. Record the time. Beat it next time.',diff:'Medium',xp:85,proof:true},
+      {id:138,cat:'Fitness',name:'200 Skaters',desc:'200 skater jumps — side to side, single leg landing. Best lateral movement exercise.',diff:'Medium',xp:70,proof:true},
+      {id:139,cat:'Fitness',name:'30 Muscle-Up Attempts',desc:'Work on muscle-ups for 20 minutes. Even if you cannot do them yet — practice the movement.',diff:'Hard',xp:160,proof:true},
+      {id:140,cat:'Fitness',name:'45 Min Elliptical',desc:'45 minutes on the elliptical at moderate-high resistance. Keep heart rate above 140.',diff:'Easy',xp:55,proof:true},
+      {id:141,cat:'Fitness',name:'100 Cable Rows',desc:'100 seated cable rows. Squeeze shoulder blades together at end of every rep.',diff:'Easy',xp:40,proof:false},
+      {id:142,cat:'Fitness',name:'20 Min Abs Circuit',desc:'20 minute non-stop abs circuit. Mix planks, crunches, leg raises, and twists.',diff:'Medium',xp:70,proof:true},
+      {id:143,cat:'Fitness',name:'8km Run',desc:'Run 8 kilometres today. Push through the second half when your mind says stop.',diff:'Hard',xp:120,proof:true},
+      {id:144,cat:'Fitness',name:'50 Renegade Rows',desc:'50 renegade rows — push-up position, row one dumbbell at a time. Core stays rigid.',diff:'Hard',xp:110,proof:true},
+      {id:145,cat:'Fitness',name:'400m Sprint Repeats',desc:'8 x 400m sprints with 2 minutes rest between each. Push every single one. Time yourself.',diff:'Hard',xp:140,proof:true},
+      {id:146,cat:'Nutrition',name:'No Dessert Today',desc:'Skip dessert completely. If you want something sweet, eat fruit — whole fruit, not juice.',diff:'Easy',xp:20,proof:false},
+      {id:147,cat:'Nutrition',name:'Eat 30g Fibre',desc:'Hit 30 grams of dietary fibre today. Oats, legumes, vegetables, seeds. Your gut will thank you.',diff:'Medium',xp:45,proof:false},
+      {id:148,cat:'Nutrition',name:'Omega-3 Rich Day',desc:'Every meal today includes omega-3 — salmon, sardines, walnuts, flaxseed, or chia.',diff:'Easy',xp:30,proof:false},
+      {id:149,cat:'Nutrition',name:'No Eating Standing Up',desc:'Sit down for every meal today. Be present with your food. No eating while walking or driving.',diff:'Easy',xp:15,proof:false},
+      {id:150,cat:'Nutrition',name:'Breakfast Like a King',desc:'Eat your biggest, most nutritious meal before 9AM. Large, balanced, protein-rich.',diff:'Medium',xp:40,proof:false},
+      {id:151,cat:'Nutrition',name:'No Dairy Today',desc:'Remove all dairy for 24 hours. Notice how your body feels without it.',diff:'Medium',xp:45,proof:false},
+      {id:152,cat:'Nutrition',name:'Eat Only Whole Foods',desc:'Nothing from a box or packet today. Every single thing comes from its natural state.',diff:'Hard',xp:80,proof:false},
+      {id:153,cat:'Nutrition',name:'Hit Your Calorie Goal',desc:'For once, hit your exact calorie target — not under, not over. Track every bite accurately.',diff:'Medium',xp:50,proof:false},
+      {id:154,cat:'Nutrition',name:'Anti-Inflammatory Day',desc:'Every meal is anti-inflammatory — turmeric, ginger, berries, leafy greens, fatty fish. Zero processed.',diff:'Medium',xp:55,proof:false},
+      {id:155,cat:'Nutrition',name:'Drink Green Tea All Day',desc:'Replace all hot drinks with green tea today. Minimum 3 cups. Antioxidants and metabolism boost.',diff:'Easy',xp:20,proof:false},
+      {id:156,cat:'Mindset',name:'Morning Pages',desc:'Write 3 pages by hand immediately after waking. Stream of consciousness — no editing.',diff:'Medium',xp:55,proof:false},
+      {id:157,cat:'Mindset',name:'Affirmations Practice',desc:'Write 10 positive affirmations and repeat them out loud 3 times. Morning and evening.',diff:'Easy',xp:20,proof:false},
+      {id:158,cat:'Mindset',name:'Spend Time in Nature',desc:'At least 1 hour outdoors in nature today. Walk, sit, breathe. Get off the concrete.',diff:'Easy',xp:30,proof:false},
+      {id:159,cat:'Mindset',name:'No Gossip Today',desc:'Do not talk negatively about anyone today. Redirect every conversation.',diff:'Medium',xp:50,proof:false},
+      {id:160,cat:'Mindset',name:'Act of Kindness',desc:'Do one genuine act of kindness for a stranger today. Not for recognition — just because.',diff:'Easy',xp:25,proof:false},
+      {id:161,cat:'Mindset',name:'Review Your Goals',desc:'Spend 20 minutes reviewing your goals. Are your daily actions aligned with where you want to go?',diff:'Easy',xp:25,proof:false},
+      {id:162,cat:'Mindset',name:'Mindful Eating',desc:'For every meal today, eat in complete silence with no phone or TV. Just taste and feel your food.',diff:'Medium',xp:45,proof:false},
+      {id:163,cat:'Mindset',name:'Write Your Eulogy',desc:'Write 300 words about how you want to be remembered. Then ask — are you living that way?',diff:'Hard',xp:90,proof:false},
+      {id:164,cat:'Mindset',name:'Say No to One Thing',desc:'Say no to one commitment that does not serve your goals today. Protect your time.',diff:'Medium',xp:50,proof:false},
+      {id:165,cat:'Mindset',name:'30 Min Walk Without Phone',desc:'Walk for 30 minutes with your phone left at home. Just your thoughts and the world.',diff:'Easy',xp:30,proof:false},
+      {id:166,cat:'Mindset',name:'Identify Your Top 3 Priorities',desc:'Write your top 3 life priorities. Check — are you spending time and energy on those 3 things?',diff:'Easy',xp:25,proof:false},
+      {id:167,cat:'Mindset',name:'Listen More Than You Speak',desc:'In every conversation today, focus on listening. Ask questions. Learn from others.',diff:'Medium',xp:45,proof:false},
+      {id:168,cat:'Mindset',name:'Forgive Someone',desc:'Mentally forgive someone who wronged you — not for them, but for your own peace of mind.',diff:'Hard',xp:80,proof:false},
+      {id:169,cat:'Mindset',name:'Screen-Free Evening',desc:'From 7PM onwards — no screens. Read, cook, talk, think. Your evening belongs to you.',diff:'Medium',xp:55,proof:false},
+      {id:170,cat:'Mindset',name:'Write Down Your Wins',desc:'Write down 5 wins from the past week — big or small. Acknowledge your progress.',diff:'Easy',xp:20,proof:false},
+      {id:171,cat:'Mindset',name:'Practice Deep Breathing',desc:'4 rounds of box breathing — 4 seconds in, 4 hold, 4 out, 4 hold. Do it 3 times today.',diff:'Easy',xp:20,proof:false},
+      {id:172,cat:'Mindset',name:'One Hour of Silence',desc:'One full hour today in complete silence — no music, no podcasts, no TV. Just be.',diff:'Hard',xp:85,proof:false},
+      {id:173,cat:'Mindset',name:'Unfollow 10 Accounts',desc:'Unfollow 10 social media accounts that do not add value or inspire you.',diff:'Easy',xp:20,proof:false},
+      {id:174,cat:'Mindset',name:'Create Something',desc:'Spend 30 minutes creating something today — art, writing, music, food. Use your hands and mind.',diff:'Easy',xp:30,proof:false},
+      {id:175,cat:'Mindset',name:'Night Routine',desc:'Create and follow a solid night routine tonight — stretch, journal, read, no screens.',diff:'Easy',xp:30,proof:false},
+      {id:176,cat:'Fitness',name:'50 Pike Push-Ups',desc:'50 pike push-ups. Hips high, arms shoulder-width, push straight down. Best shoulder builder.',diff:'Medium',xp:65,proof:true},
+      {id:177,cat:'Fitness',name:'100 Good Mornings',desc:'100 good mornings — barbell or bodyweight. Hinge at hips, keep back flat.',diff:'Medium',xp:65,proof:true},
+      {id:178,cat:'Nutrition',name:'Eat Before 8PM',desc:'Finish your last meal before 8PM tonight and do not eat again until breakfast.',diff:'Easy',xp:25,proof:false},
+      {id:179,cat:'Mindset',name:'Celebrate Someone Else',desc:'Genuinely celebrate someone else win today. No jealousy, no comparison. Abundance mindset.',diff:'Easy',xp:20,proof:false},
+      {id:180,cat:'Fitness',name:'100 Hip Circles',desc:'100 hip circles — 50 each direction. Best warm-up for hips and lower back.',diff:'Easy',xp:20,proof:false},
+      {id:181,cat:'Mindset',name:'Audit Your Friend Group',desc:'Honestly assess who in your life lifts you up and who drains you. Make decisions accordingly.',diff:'Hard',xp:80,proof:false},
+      {id:182,cat:'Fitness',name:'25 Muscle-Up Attempts',desc:'Work on muscle-ups for 20 minutes. Even if you cannot do them yet — practice the movement.',diff:'Hard',xp:100,proof:true},
+      {id:183,cat:'Nutrition',name:'Coconut Oil Day',desc:'Replace all cooking oils with coconut oil today. Notice how it changes your meals and energy.',diff:'Easy',xp:20,proof:false},
+      {id:184,cat:'Mindset',name:'Write Your Mission Statement',desc:'Write a personal mission statement — who you are, what you stand for, what you are building.',diff:'Medium',xp:55,proof:false},
+      {id:185,cat:'Fitness',name:'Timed Plank PR',desc:'Hold a plank for as long as possible. Record your time. This is your personal record to beat.',diff:'Hard',xp:95,proof:true},
+      {id:186,cat:'Nutrition',name:'Apple Cider Vinegar Morning',desc:'Drink 1 tablespoon of apple cider vinegar diluted in water this morning. Start the habit.',diff:'Easy',xp:15,proof:false},
+      {id:187,cat:'Fitness',name:'200 Band Pull-Aparts',desc:'200 resistance band pull-aparts today. Best posture and rear delt exercise there is.',diff:'Easy',xp:35,proof:false},
+      {id:188,cat:'Mindset',name:'Read About Someone Inspiring',desc:'Spend 30 minutes reading about someone who overcame more to achieve more than you.',diff:'Easy',xp:25,proof:false},
+      {id:189,cat:'Fitness',name:'15km Bike Ride',desc:'Bike 15 kilometres today. Outdoors if possible. Feel the distance under you.',diff:'Medium',xp:75,proof:true},
+      {id:190,cat:'Nutrition',name:'Track Water Intake',desc:'Track every glass of water today. Hit 8 glasses minimum. Most people are chronically dehydrated.',diff:'Easy',xp:15,proof:false},
+      {id:191,cat:'Fitness',name:'100 Lateral Raises',desc:'100 lateral raises — light weight, controlled. Slow up, slow down. Build those shoulders.',diff:'Easy',xp:35,proof:false},
+      {id:192,cat:'Mindset',name:'Write 10 Things You Are Proud Of',desc:'List 10 things about yourself you are genuinely proud of. Read them out loud.',diff:'Easy',xp:20,proof:false},
+      {id:193,cat:'Fitness',name:'Gymnastics Rings Session',desc:'30 minutes on gymnastics rings — ring rows, support holds, dips. Rings are humbling.',diff:'Hard',xp:120,proof:true},
+      {id:194,cat:'Nutrition',name:'No Condiments Today',desc:'No ketchup, mayonnaise, hot sauce, nothing. Taste your actual food.',diff:'Medium',xp:40,proof:false},
+      {id:195,cat:'Mindset',name:'Limit Decisions Today',desc:'Plan your meals, outfit, and schedule the night before. Free your mental energy.',diff:'Medium',xp:45,proof:false},
+      {id:196,cat:'Fitness',name:'200 Tricep Kickbacks',desc:'200 tricep kickbacks with light dumbbells. Perfect form, full extension.',diff:'Easy',xp:35,proof:false},
+      {id:197,cat:'Nutrition',name:'Eat a New Vegetable',desc:'Buy and eat a vegetable you have never tried before. Expand your palate.',diff:'Easy',xp:20,proof:false},
+      {id:198,cat:'Mindset',name:'Mentor Someone',desc:'Share your knowledge, experience, or advice with someone who needs it today.',diff:'Medium',xp:50,proof:false},
+      {id:199,cat:'Fitness',name:'Plyometric Leg Day',desc:'Box jumps, jump squats, broad jumps, and lunge jumps — 4 sets of 15 each. Explosive power.',diff:'Hard',xp:120,proof:true},
+      {id:200,cat:'Mindset',name:'End the Day With Gratitude',desc:'Before you sleep, list 5 things that went well today. No matter how small. End on a win.',diff:'Easy',xp:15,proof:false},
+      {id:201,cat:'Fitness',name:'50 Inverted Rows',desc:'50 inverted rows using a table or bar. Body straight, pull chest to bar.',diff:'Medium',xp:70,proof:true},
+      {id:202,cat:'Fitness',name:'Run Until You Cannot',desc:'Run without a distance goal today. Just run until you genuinely cannot anymore. Find your limit.',diff:'Hard',xp:130,proof:true},
+      {id:203,cat:'Nutrition',name:'Fermented Food Day',desc:'Include fermented food in every meal — kimchi, sauerkraut, kefir, yogurt. Gut health is everything.',diff:'Medium',xp:45,proof:false},
+      {id:204,cat:'Mindset',name:'Power Hour',desc:'One hour of your most important work, first thing in the morning. Before email, before anything.',diff:'Hard',xp:90,proof:false},
+      {id:205,cat:'Fitness',name:'Weighted Vest Walk',desc:'Walk for 45 minutes with a weighted vest or heavy backpack. Adds intensity to a simple activity.',diff:'Medium',xp:70,proof:true},
+      {id:206,cat:'Nutrition',name:'Zero Refined Carbs',desc:'No white bread, white rice, white pasta today. Choose whole grain or eliminate carbs entirely.',diff:'Medium',xp:50,proof:false},
+      {id:207,cat:'Mindset',name:'Study a New Topic for 1 Hour',desc:'Pick any topic you know nothing about and study it for a full hour. Curiosity is a superpower.',diff:'Medium',xp:50,proof:false},
+      {id:208,cat:'Fitness',name:'100 Inch Worms',desc:'100 inch worms — walk hands out to plank, walk feet to hands, stand. Full body movement.',diff:'Medium',xp:70,proof:true},
+      {id:209,cat:'Nutrition',name:'Eat a Rainbow',desc:'Eat 6 different coloured vegetables or fruits today. Every colour is different nutrients.',diff:'Easy',xp:30,proof:false},
+      {id:210,cat:'Mindset',name:'Write a Review of Your Month',desc:'Spend 20 minutes reviewing this month. What worked? What did not? What changes?',diff:'Medium',xp:45,proof:false},
+    ],
+    weekly: [
+      {id:301,cat:'Fitness',name:'Run 20km This Week',desc:'Spread 20 kilometres across 7 days. Walk, jog, sprint — just hit the distance.',benefits:'Burns significant calories, builds cardiovascular endurance, improves lung capacity, and releases endorphins that reduce stress and anxiety.',diff:'Medium',xp:250,proof:true},
+      {id:302,cat:'Fitness',name:'Train 5 Days Straight',desc:'Hit the gym or do a home workout 5 out of 7 days. No excuses for missing more than 2.',benefits:'Builds the habit of consistency — the single most important factor in long-term physical transformation. 5-day training weeks increase muscle protein synthesis significantly.',diff:'Hard',xp:350,proof:true},
+      {id:303,cat:'Fitness',name:'Cold Shower Every Day',desc:'End every shower with at least 2 minutes of cold water. All 7 days.',benefits:'Activates brown fat and boosts metabolism, reduces muscle soreness, increases dopamine by up to 250%, and builds mental toughness through voluntary discomfort.',diff:'Hard',xp:280,proof:false},
+      {id:304,cat:'Fitness',name:'Run 30km This Week',desc:'30 kilometres across 7 days. Push beyond what is comfortable.',benefits:'Builds a strong aerobic base, burns over 2500 calories, improves heart efficiency, and dramatically increases mental endurance.',diff:'Hard',xp:400,proof:true},
+      {id:305,cat:'Fitness',name:'1000 Pull-Ups This Week',desc:'1000 pull-ups spread across 7 days — about 143 per day. Track every rep.',benefits:'Builds unmatched back width and thickness, develops grip strength, builds biceps, and requires daily discipline that changes your character.',diff:'Hard',xp:500,proof:true},
+      {id:306,cat:'Fitness',name:'Train Every Single Day',desc:'7 days. No rest days. Shorter sessions are fine — but every day you move.',benefits:'Breaks the cycle of rest-day excuses, builds daily movement habits, and shows you your body is capable of far more than your mind believes.',diff:'Hard',xp:450,proof:true},
+      {id:307,cat:'Fitness',name:'5000 Push-Ups This Week',desc:'5000 push-ups over 7 days — about 715 per day. Break throughout the day.',benefits:'Develops chest, shoulders and triceps simultaneously, builds extraordinary muscular endurance, and the daily commitment forges unbreakable discipline.',diff:'Hard',xp:550,proof:true},
+      {id:308,cat:'Fitness',name:'Swim 5km This Week',desc:'Swim a total of 5 kilometres across the week. Any stroke, any pool, any pace.',benefits:'Full body workout with zero joint impact, builds lung capacity, improves posture and flexibility, and burns 500+ calories per session.',diff:'Medium',xp:300,proof:true},
+      {id:309,cat:'Fitness',name:'Morning Workout Every Day',desc:'Complete a workout before 8AM every single day this week.',benefits:'Morning exercise elevates metabolism all day, releases endorphins before stress accumulates, and creates an unshakeable sense of accomplishment.',diff:'Hard',xp:380,proof:true},
+      {id:310,cat:'Fitness',name:'Cycle 100km This Week',desc:'Bike 100 kilometres this week. Split however works — 14km daily or longer weekend rides.',benefits:'Builds powerful legs, burns serious calories, easy on joints, improves cardiovascular efficiency.',diff:'Medium',xp:320,proof:true},
+      {id:311,cat:'Fitness',name:'10km Run 3 Times',desc:'Run 10 kilometres on 3 separate days this week. Recovery matters — pick your days wisely.',benefits:'Three long runs per week dramatically improve VO2 max, build lean leg muscle, and mentally prepare you for any endurance challenge.',diff:'Hard',xp:420,proof:true},
+      {id:312,cat:'Fitness',name:'Yoga Every Morning',desc:'15 minutes of yoga every morning this week before you do anything else. 7 days.',benefits:'Improves flexibility, reduces cortisol, improves sleep, builds core strength, and creates a mindful start to every day.',diff:'Medium',xp:220,proof:false},
+      {id:313,cat:'Fitness',name:'Walk 10km Every Day',desc:'Walk 10 kilometres every single day this week. Morning, evening, or broken up.',benefits:'Walking 10km daily burns 3500+ calories across the week, dramatically improves cardiovascular health, reduces stress hormones.',diff:'Medium',xp:300,proof:true},
+      {id:314,cat:'Fitness',name:'Bodyweight Only Week',desc:'Zero gym equipment this week. Every workout is bodyweight only.',benefits:'Builds functional strength, improves body control and coordination, and proves that excuses about gym access are just that — excuses.',diff:'Medium',xp:250,proof:true},
+      {id:315,cat:'Fitness',name:'5 Different Workouts in 5 Days',desc:'Monday to Friday — 5 completely different workouts. Running, swimming, gym, cycling, yoga.',benefits:'Cross-training reduces injury risk, prevents adaptation plateaus, develops well-rounded fitness, and keeps motivation high through variety.',diff:'Medium',xp:300,proof:true},
+      {id:316,cat:'Nutrition',name:'Meal Prep Sunday',desc:'Prepare clean meals for the entire week on Sunday. No takeout, no delivery all week.',benefits:'Saves money, eliminates impulsive junk food choices, ensures consistent macro intake, and removes daily stress of deciding what to eat.',diff:'Medium',xp:200,proof:true},
+      {id:317,cat:'Nutrition',name:'Zero Alcohol Week',desc:'7 days completely alcohol-free. Water, tea, coffee only.',benefits:'Improves sleep quality, accelerates fat loss, reduces inflammation, improves skin, sharpens mental clarity.',diff:'Hard',xp:300,proof:false},
+      {id:318,cat:'Nutrition',name:'Protein Every Meal',desc:'Every single meal this week must contain a quality protein source.',benefits:'Adequate protein intake preserves muscle mass, increases satiety, boosts metabolism, and supports muscle repair.',diff:'Easy',xp:150,proof:false},
+      {id:319,cat:'Nutrition',name:'No Sugar for 7 Days',desc:'Zero added sugar for the entire week. Read every label. Become aware of where it hides.',benefits:'Reduces inflammation, stabilises energy and mood, improves insulin sensitivity, clears skin.',diff:'Hard',xp:350,proof:false},
+      {id:320,cat:'Nutrition',name:'Cook Every Meal This Week',desc:'Not a single meal comes from a restaurant, delivery, or packet this week.',benefits:'Saves significant money, gives full control over ingredients and portions, builds a lifelong cooking skill.',diff:'Hard',xp:320,proof:false},
+      {id:321,cat:'Nutrition',name:'Drink Only Water This Week',desc:'Zero coffee, alcohol, juice, or soda. Pure water only for 7 days. At least 2.5L per day.',benefits:'Resets caffeine dependency, improves skin hydration, eliminates liquid calories.',diff:'Hard',xp:340,proof:false},
+      {id:322,cat:'Nutrition',name:'Eat Before 7PM Every Day',desc:'Every meal this week is finished before 7PM. No late-night eating whatsoever.',benefits:'Improves sleep quality dramatically, supports fat loss, gives your digestive system time to rest.',diff:'Medium',xp:200,proof:false},
+      {id:323,cat:'Nutrition',name:'Intermittent Fasting All Week',desc:'16:8 fasting every day this week. Eat only between 12PM and 8PM. No exceptions.',benefits:'Promotes fat burning, improves insulin sensitivity, may trigger cellular autophagy, builds impressive dietary discipline.',diff:'Hard',xp:360,proof:false},
+      {id:324,cat:'Nutrition',name:'Vegan Week',desc:'Eat completely plant-based for 7 days. No meat, no dairy, no eggs.',benefits:'Reduces saturated fat intake, increases fibre and antioxidants, reduces inflammation.',diff:'Hard',xp:330,proof:false},
+      {id:325,cat:'Nutrition',name:'3L Water Daily All Week',desc:'Drink at least 3 litres of water every single day this week. Track it always.',benefits:'Improves every bodily function, boosts metabolism, reduces hunger, improves skin and energy levels.',diff:'Medium',xp:180,proof:false},
+      {id:326,cat:'Nutrition',name:'No Processed Food Week',desc:'Nothing from a box, packet, or can this week.',benefits:'Eliminates hidden sugars, preservatives, and artificial additives — reducing bloating and improving energy.',diff:'Hard',xp:350,proof:false},
+      {id:327,cat:'Nutrition',name:'Calorie Tracking All Week',desc:'Track every single calorie this week. Every meal, every snack, every drink.',benefits:'Most people underestimate intake by 30-40%. One week of accurate tracking permanently changes your understanding of food.',diff:'Medium',xp:200,proof:false},
+      {id:328,cat:'Nutrition',name:'Mediterranean Diet Week',desc:'Eat Mediterranean this week — olive oil, fish, whole grains, legumes, vegetables.',benefits:'The most researched diet in the world. Reduces cardiovascular disease risk, inflammation, and improves brain function.',diff:'Medium',xp:230,proof:false},
+      {id:329,cat:'Mindset',name:'Read 30 Min Daily',desc:'30 minutes of reading every single day this week. No audiobooks — real reading.',benefits:'Improves focus and concentration, expands vocabulary and knowledge, reduces cortisol levels by up to 68%.',diff:'Easy',xp:140,proof:false},
+      {id:330,cat:'Mindset',name:'No Social Media After 9PM',desc:'Every evening this week — phone down at 9PM. No scrolling, no stories, no reels.',benefits:'Dramatically improves sleep quality, reduces anxiety and comparison mindset.',diff:'Medium',xp:180,proof:false},
+      {id:331,cat:'Mindset',name:'Journal Every Night',desc:'Write at least 10 minutes in your journal every evening this week.',benefits:'Reduces anxiety, improves emotional processing, increases self-awareness, helps identify patterns in your thinking.',diff:'Easy',xp:160,proof:false},
+      {id:332,cat:'Mindset',name:'No Phone Before 10AM All Week',desc:'Every morning this week — stay off your phone until 10AM. Own the morning.',benefits:'Eliminates reactive morning behaviour, allows proactive goal-focused thinking, reduces morning anxiety.',diff:'Hard',xp:280,proof:false},
+      {id:333,cat:'Mindset',name:'Meditation Every Day',desc:'10 minutes of meditation every day this week. Same time every day. Build the habit.',benefits:'Reduces cortisol, improves focus and attention span, enhances emotional regulation, reduces anxiety.',diff:'Medium',xp:200,proof:false},
+      {id:334,cat:'Mindset',name:'Read One Full Book',desc:'Read an entire book this week. Non-fiction preferred. Apply one thing you learn.',benefits:'The average reader reads 12 books per year. The top earners read 60+. One book per week is the simplest investment in yourself.',diff:'Hard',xp:300,proof:false},
+      {id:335,cat:'Mindset',name:'Cold Turkey on One Bad Habit',desc:'Identify your worst habit and eliminate it completely for 7 days. No negotiation.',benefits:'Breaking a habit for 7 days proves to your brain that it can be done. The first week is always the hardest.',diff:'Hard',xp:350,proof:false},
+      {id:336,cat:'Mindset',name:'Digital Detox Evenings',desc:'Three evenings this week: no screens after 9PM. Read, stretch, journal.',benefits:'Dramatically improves sleep quality, reduces anxiety and comparison mindset.',diff:'Medium',xp:180,proof:false},
+      {id:337,cat:'Mindset',name:'Write 3 Gratitudes Every Morning',desc:'Every morning this week, before anything else, write 3 specific things you are grateful for.',benefits:'Daily gratitude shifts your brain to notice the positive. Proven to reduce depression and anxiety within two weeks.',diff:'Easy',xp:130,proof:false},
+      {id:338,cat:'Mindset',name:'Learn a New Skill This Week',desc:'Spend 30 minutes every day this week learning a completely new skill.',benefits:'Learning new skills literally grows new neural connections. Regular learning slows cognitive aging and boosts confidence.',diff:'Medium',xp:220,proof:false},
+      {id:339,cat:'Mindset',name:'No Complaining for 7 Days',desc:'An entire week without complaining — out loud or in your head.',benefits:'The average person complains 15-30 times per day. Eliminating complaints shifts your brain from problem-focused to solution-focused.',diff:'Hard',xp:320,proof:false},
+      {id:340,cat:'Mindset',name:'One Hard Conversation Per Day',desc:'Have one difficult conversation every day this week. Something you have been avoiding.',benefits:'Avoiding hard conversations creates anxiety and stunts personal growth. Having them builds courage and improves relationships.',diff:'Hard',xp:360,proof:false},
+      {id:341,cat:'Mindset',name:'Spend Time With Inspiring People',desc:'Every day this week, spend deliberate time with someone who challenges or inspires you.',benefits:'You are the average of the five people you spend most time with. Intentional social investment is one of the highest-leverage activities.',diff:'Medium',xp:200,proof:false},
+      {id:342,cat:'Mindset',name:'Plan Your Entire Week on Sunday',desc:'This Sunday, plan every hour of your upcoming week. Meals, workouts, work, rest.',benefits:'People who plan their week achieve 2-3x more than those who do not. Planning eliminates time spent deciding and hesitating.',diff:'Medium',xp:170,proof:false},
+      {id:343,cat:'Mindset',name:'No Alcohol and No Social Media',desc:'7 days. No alcohol, no Instagram, no TikTok, no Twitter.',benefits:'Eliminating both simultaneously clears your mind, frees 3-5 hours daily, improves sleep, and reduces anxiety.',diff:'Hard',xp:400,proof:false},
+      {id:344,cat:'Mindset',name:'5AM Every Day This Week',desc:'Wake up at 5AM every single morning this week. No exceptions — even weekends.',benefits:'The 5AM club gives you 2-3 hours of uninterrupted focus before the world starts demanding your attention.',diff:'Hard',xp:420,proof:false},
+      {id:345,cat:'Mindset',name:'100 Pages of Reading',desc:'Read 100 total pages this week — about 14 pages per day.',benefits:'Reading 100 pages per week means 5000 pages per year — roughly 15-20 books. The compounding effect is extraordinary.',diff:'Medium',xp:210,proof:false},
+      {id:346,cat:'Mindset',name:'Gratitude Letter to Someone',desc:'Write a genuine gratitude letter to someone who changed your life. Send it or read it to them.',benefits:'Research found gratitude letters produced the single largest positive effect on happiness of any intervention tested.',diff:'Medium',xp:190,proof:false},
+      {id:347,cat:'Mindset',name:'Screen-Free Mornings All Week',desc:'Every morning — no phone, no TV, no laptop until after your morning routine is complete.',benefits:'Screen-free mornings allow your prefrontal cortex to engage fully before emotional content overwhelms your day.',diff:'Hard',xp:290,proof:false},
+      {id:348,cat:'Mindset',name:'Act As Your Best Self All Week',desc:'Every decision this week — ask: what would my best self do?',benefits:'Identity-based behaviour change is the most effective form of self-improvement. Acting as your ideal self gradually makes it your reality.',diff:'Hard',xp:380,proof:false},
+      {id:349,cat:'Mindset',name:'Spend 1 Hour Outdoors Daily',desc:'At least 1 hour outdoors in natural light every day this week.',benefits:'Natural light regulates circadian rhythms, reduces cortisol, boosts vitamin D, improves mood via serotonin.',diff:'Easy',xp:150,proof:false},
+      {id:350,cat:'Mindset',name:'Weekly Reflection Journal',desc:'Every evening: What went well, What did not, What I will do differently tomorrow.',benefits:'This 3-question framework is one of the most effective personal growth tools. It accelerates learning from experience dramatically.',diff:'Easy',xp:140,proof:false},
+    ],
+    monthly: [
+      {id:401,cat:'Fitness',name:'30-Day Body Transformation',desc:'Progressive workouts for 30 days. Week 1 baseline, Week 2 increase intensity, Week 3 push limits, Week 4 give everything.',benefits:'Progressive overload over 30 days is the most proven method for visible body recomposition. You will see measurable differences in strength, endurance, and body composition.',diff:'Hard',xp:1500,proof:true},
+      {id:402,cat:'Fitness',name:'Run a 5K Under 30 Min',desc:'Train throughout the month with one goal — run 5 kilometres in under 30 minutes by Day 30.',benefits:'Goal-oriented cardio is more effective than general exercise. Building toward a specific target improves motivation and creates measurable progress.',diff:'Medium',xp:900,proof:true},
+      {id:403,cat:'Fitness',name:'100 Pull-Ups Challenge',desc:'By end of month, complete 100 pull-ups in a single session. Start wherever you are. Progress daily.',benefits:'Going from zero to 100 in a month requires daily commitment and delivers extraordinary back, bicep, and grip strength.',diff:'Hard',xp:1200,proof:true},
+      {id:404,cat:'Fitness',name:'Walk 300km This Month',desc:'Walk 300 kilometres over 30 days — 10km per day. Track every step. Hit the number.',benefits:'Walking 300km burns approximately 15,000 calories, dramatically improves cardiovascular health, reduces stress hormones.',diff:'Hard',xp:1100,proof:true},
+      {id:405,cat:'Fitness',name:'30 Days of Morning Workouts',desc:'Exercise every morning for 30 days before 8AM. Any duration — just move every morning.',benefits:'Morning workouts create positive momentum that influences all other habits and build discipline that transfers everywhere.',diff:'Hard',xp:1300,proof:true},
+      {id:406,cat:'Fitness',name:'Train Every Day for 30 Days',desc:'30 consecutive days of physical training. Rest is not an option. Adapt, recover, continue.',benefits:'30 straight days completely rewires your relationship with exercise. What was once a choice becomes a need.',diff:'Hard',xp:1600,proof:true},
+      {id:407,cat:'Fitness',name:'Swim 50km This Month',desc:'Swim a total of 50 kilometres over 30 days — roughly 1.7km per day.',benefits:'Builds extraordinary cardiovascular fitness, develops full-body muscular endurance, improves posture.',diff:'Hard',xp:1400,proof:true},
+      {id:408,cat:'Fitness',name:'Run 100km This Month',desc:'100 kilometres over 30 days. That is 3.3km per day on average. Build up progressively.',benefits:'Running 100km builds serious aerobic base, burns thousands of calories, develops mental resilience.',diff:'Hard',xp:1500,proof:true},
+      {id:409,cat:'Fitness',name:'Complete a Couch to 5K',desc:'Follow the Couch to 5K program from start to finish. By Day 30, you can run 5K.',benefits:'Going from non-runner to 5K runner in 30 days is one of the most powerful physical identity shifts possible.',diff:'Medium',xp:900,proof:true},
+      {id:410,cat:'Fitness',name:'50000 Push-Ups This Month',desc:'50,000 push-ups across 30 days — about 1,667 per day. Make it your mission.',benefits:'This challenge builds extraordinary chest, shoulder, and tricep endurance. The daily commitment tests and builds your discipline.',diff:'Hard',xp:2000,proof:true},
+      {id:411,cat:'Nutrition',name:'Clean Month',desc:'30 days of clean eating. No processed food, no fast food, no alcohol, no refined sugar.',benefits:'A full month of clean eating resets your gut microbiome, reduces inflammation, and stabilises blood sugar and energy levels.',diff:'Hard',xp:1200,proof:false},
+      {id:412,cat:'Nutrition',name:'No Alcohol for 30 Days',desc:'30 days completely dry. Not a single drink. Track how you feel each week.',benefits:'30 alcohol-free days reduces liver fat by up to 15%, improves sleep significantly, leads to noticeable weight loss and clearer skin.',diff:'Hard',xp:1000,proof:false},
+      {id:413,cat:'Nutrition',name:'Zero Sugar Month',desc:'No added sugar for 30 full days. Read every label. Cook from scratch.',benefits:'Eliminating sugar for 30 days reduces inflammation, stabilises energy and mood, improves insulin sensitivity.',diff:'Hard',xp:1100,proof:false},
+      {id:414,cat:'Nutrition',name:'Meal Prep Every Sunday',desc:'Prepare all your meals every Sunday for 4 weeks straight. No exceptions.',benefits:'4 weeks of meal prepping builds a lifelong habit that saves money and ensures nutritional consistency.',diff:'Medium',xp:700,proof:true},
+      {id:415,cat:'Nutrition',name:'Intermittent Fasting All Month',desc:'16:8 intermittent fasting every single day for 30 days. Eat only between 12PM and 8PM.',benefits:'30 days of consistent IF significantly improves insulin sensitivity, promotes cellular autophagy, supports fat loss.',diff:'Hard',xp:1150,proof:false},
+      {id:416,cat:'Nutrition',name:'3L Water Every Day',desc:'Drink at least 3 litres of water every day for the entire month.',benefits:'30 days of proper hydration improves every bodily function, enhances workout performance, clears skin.',diff:'Medium',xp:600,proof:false},
+      {id:417,cat:'Nutrition',name:'No Processed Food Month',desc:'30 days with zero processed food. Nothing from a packet or with more than 5 ingredients.',benefits:'Eliminating processed food for a month removes thousands of additives. Most people report dramatically improved energy and digestion.',diff:'Hard',xp:1100,proof:false},
+      {id:418,cat:'Nutrition',name:'Mediterranean Diet Month',desc:'Commit to the Mediterranean diet for the full month — fish, olive oil, whole grains, vegetables.',benefits:'The most scientifically validated diet on earth. Reduces cardiovascular risk, inflammation, and improves brain function.',diff:'Medium',xp:800,proof:false},
+      {id:419,cat:'Nutrition',name:'Cook Every Meal for 30 Days',desc:'Not a single meal from a restaurant or delivery for the entire month.',benefits:'30 days of home cooking builds lifelong culinary skills, saves significant money, and changes your relationship with food.',diff:'Hard',xp:1000,proof:false},
+      {id:420,cat:'Nutrition',name:'Track Macros for 30 Days',desc:'Log every meal, every day, for the entire month. Hit your targets daily.',benefits:'30 days of macro tracking gives you permanent nutritional intelligence. One month changes your understanding of food forever.',diff:'Medium',xp:750,proof:false},
+      {id:421,cat:'Mindset',name:'Journal Every Day for 30 Days',desc:'One page minimum every single day. Track your growth, struggles, and wins.',benefits:'Daily journaling reduces anxiety, improves self-awareness, clarifies goals, and creates a personal record of your growth.',diff:'Medium',xp:800,proof:false},
+      {id:422,cat:'Mindset',name:'Read a Book a Week',desc:'Read 4 complete books this month — one per week. Non-fiction recommended.',benefits:'Reading 4 books per month puts you in the top 1% of readers. The compounding effect on knowledge and decision-making is extraordinary.',diff:'Hard',xp:1100,proof:false},
+      {id:423,cat:'Mindset',name:'Meditate Every Day',desc:'10 minutes of meditation every morning for 30 days. Same time, same place.',benefits:'Research shows 8 weeks of daily meditation measurably changes brain structure — increasing grey matter in areas for focus and emotional regulation.',diff:'Medium',xp:700,proof:false},
+      {id:424,cat:'Mindset',name:'No Social Media for 30 Days',desc:'Delete the apps. Completely off all social media for the entire month.',benefits:'The average person spends 2+ hours daily on social media. Eliminating it for a month gives you 60+ hours back and reveals who you actually are.',diff:'Hard',xp:1200,proof:false},
+      {id:425,cat:'Mindset',name:'5AM Every Day This Month',desc:'Wake up at 5AM every single morning for 30 days. Weekends included. No exceptions.',benefits:'30 days at 5AM gives you 60+ extra hours of focused morning time and completely rewires your identity.',diff:'Hard',xp:1300,proof:false},
+      {id:426,cat:'Mindset',name:'One Hard Thing Every Day',desc:'Every day this month, do one thing that scares you, challenges you, or makes you uncomfortable.',benefits:'Consistent voluntary discomfort builds the most valuable trait — courage. After 30 days, your fear response to challenges fundamentally changes.',diff:'Hard',xp:1100,proof:false},
+      {id:427,cat:'Mindset',name:'Learn a Language for 30 Days',desc:'Spend at least 20 minutes every day this month learning a new language.',benefits:'30 days of consistent language learning builds 500+ words and basic conversational ability.',diff:'Medium',xp:800,proof:false},
+      {id:428,cat:'Mindset',name:'Cold Showers Every Morning',desc:'Cold shower first thing every morning for 30 days. No warm-up. Step in cold, immediately.',benefits:'30 days of cold showers builds extraordinary mental resilience, increases dopamine baseline, and changes your relationship with discomfort.',diff:'Hard',xp:1000,proof:false},
+      {id:429,cat:'Mindset',name:'Gratitude Practice for 30 Days',desc:'Every morning write 3 gratitudes. Every evening write 3 wins from the day.',benefits:'Research shows sustained gratitude practice increases happiness by up to 25%, improves sleep, and builds emotional resilience permanently.',diff:'Easy',xp:500,proof:false},
+      {id:430,cat:'Mindset',name:'No Complaining for 30 Days',desc:'30 days without a single complaint. When negativity arises — catch it and reframe.',benefits:'Eliminating complaints for a month shifts your brain default processing from problem-focused to solution-focused. It changes your personality.',diff:'Hard',xp:1200,proof:false},
+    ]
+  };
+
+  let currentMode = 'daily';
+  let activeFilters = { cat: '', diff: '' };
+  let currentIndex = 0;
+  let completedChallenges = JSON.parse(localStorage.getItem('rp_completed') || '[]');
+
+  function showChallengesPage(mode) {
+    currentMode = mode;
+    currentIndex = 0;
+    activeFilters = { cat: '', diff: '' };
+    document.querySelectorAll('.cp-mode-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('cpbtn-' + mode).classList.add('active');
+    document.querySelectorAll('.cp-filter-btn').forEach(b => b.classList.remove('active'));
+    renderChallenge();
+  }
+
+  function getFilteredChallenges() {
+    let list = allChallenges[currentMode];
+    if (activeFilters.cat) list = list.filter(c => c.cat === activeFilters.cat);
+    if (activeFilters.diff) list = list.filter(c => c.diff === activeFilters.diff);
+    return list;
+  }
+
+  function toggleFilter(type, val, btn) {
+    if (activeFilters[type] === val) {
+      activeFilters[type] = '';
+      btn.classList.remove('active');
+    } else {
+      activeFilters[type] = val;
+      document.querySelectorAll('.cp-filter-btn[data-type="' + type + '"]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentIndex = 0;
+    renderChallenge();
+  }
+
+  function shuffleChallenge() {
+    activeFilters = { cat: '', diff: '' };
+    document.querySelectorAll('.cp-filter-btn').forEach(b => b.classList.remove('active'));
+    const list = getFilteredChallenges();
+    currentIndex = Math.floor(Math.random() * list.length);
+    renderChallenge();
+  }
+
+  function nextChallenge() {
+    const list = getFilteredChallenges();
+    if (list.length === 0) return;
+    currentIndex = (currentIndex + 1) % list.length;
+    renderChallenge();
+  }
+
+  function prevChallenge() {
+    const list = getFilteredChallenges();
+    if (list.length === 0) return;
+    currentIndex = (currentIndex - 1 + list.length) % list.length;
+    renderChallenge();
+  }
+
+  function renderChallenge() {
+    const list = getFilteredChallenges();
+    const card = document.getElementById('cp-card');
+    const counter = document.getElementById('cp-counter');
+
+    if (list.length === 0) {
+      card.innerHTML = '<div style="padding:3rem;text-align:center;color:#444;font-family:\'Barlow Condensed\',sans-serif;font-size:1.2rem;letter-spacing:2px;">NO CHALLENGES MATCH YOUR FILTERS</div>';
+      counter.textContent = '0 / 0';
+      return;
+    }
+
+    const c = list[currentIndex];
+    const done = completedChallenges.includes(c.id);
+    const diffColor = c.diff === 'Easy' ? '#4caf50' : c.diff === 'Medium' ? '#ff9800' : '#cc0000';
+    const catColor = c.cat === 'Fitness' ? '#cc0000' : c.cat === 'Nutrition' ? '#4caf50' : '#7c6af7';
+
+    counter.textContent = (currentIndex + 1) + ' / ' + list.length;
+
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.2rem;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:${catColor};">${c.cat}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:${diffColor};border:1px solid ${diffColor}33;padding:2px 10px;">● ${c.diff}</span>
+      </div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,4vw,3rem);color:var(--white);line-height:1;margin-bottom:1rem;">${c.name}</h2>
+      <p style="font-size:0.95rem;color:#666;line-height:1.7;margin-bottom:${c.benefits ? '0' : '1.5rem'};">${c.desc}</p>
+      ${c.benefits ? `
+      <div style="margin:1.2rem 0 1.5rem;padding:1rem 1.2rem;border-left:3px solid #1e6b1e;background:rgba(76,175,80,0.04);">
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:#4caf50;margin-bottom:0.5rem;">Why it works</p>
+        <p style="font-size:0.88rem;color:#555;line-height:1.7;">${c.benefits}</p>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #1e1e1e;padding-top:1.2rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--red);">${c.xp} <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;color:#444;letter-spacing:1px;">XP</span></div>
+        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;justify-content:flex-end;">
+          ${done ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;color:#4caf50;border:1px solid #4caf5044;padding:0.6rem 1.2rem;">✓ COMPLETED</span>` : `
+          <button onclick="markDone(${c.id}, false)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#888;border:1px solid #333;padding:0.6rem 1.2rem;cursor:none;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.borderColor='#666'" onmouseout="this.style.color='#888';this.style.borderColor='#333'">✓ DONE FOR MYSELF</button>
+          ${c.proof ? `<button onclick="markDone(${c.id}, true)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:var(--red);color:var(--white);border:none;padding:0.6rem 1.2rem;cursor:none;transition:background 0.2s;" onmouseover="this.style.background='#ff1a1a'" onmouseout="this.style.background='var(--red)'">🏆 SUBMIT FOR POINTS</button>` : ''}
+          `}
+        </div>
+      </div>
+    `;
+  }
+
+  function markDone(id, forCommunity) {
+    if (!completedChallenges.includes(id)) {
+      completedChallenges.push(id);
+      try { localStorage.setItem('rp_completed', JSON.stringify(completedChallenges)); } catch(e) {}
+    }
+    if (forCommunity) {
+      alert('📸 Submit your proof photo/video to the community feed! (Coming soon)');
+    }
+    renderChallenge();
+  }
+
+  // ---- CHALLENGE TABS (dashboard) ----
+  function switchChallenge(type, btn) {
+    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.challenge-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + type).classList.add('active');
+  }
+
+  // ---- QUOTES ----
+  const quotes = [
+    { text: "The pain you feel today will be the strength you feel tomorrow.", author: "Arnold Schwarzenegger" },
+    { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+    { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
+    { text: "The body achieves what the mind believes.", author: "Napoleon Hill" },
+    { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+    { text: "What seems impossible today will one day become your warm-up.", author: "Unknown" },
+    { text: "Train insane or remain the same.", author: "Jade Carey" },
+    { text: "Your only limit is you.", author: "Unknown" },
+    { text: "Discipline is the bridge between goals and accomplishment.", author: "Jim Rohn" },
+    { text: "Don't wish for it. Work for it.", author: "Unknown" },
+    { text: "The hardest lift of all is lifting your butt off the couch.", author: "Unknown" },
+    { text: "Success is what happens after you have survived all your mistakes.", author: "Anora Lee" },
+    { text: "Wake up with determination. Go to bed with satisfaction.", author: "Unknown" },
+    { text: "Do something today that your future self will thank you for.", author: "Sean Patrick Flanery" },
+    { text: "It never gets easier. You just get stronger.", author: "Unknown" },
+    { text: "The only bad workout is the one that didn't happen.", author: "Unknown" },
+    { text: "Sweat is just fat crying.", author: "Unknown" },
+    { text: "Your body can stand almost anything. It's your mind you have to convince.", author: "Unknown" },
+    { text: "Failure is only the opportunity to begin again, this time more intelligently.", author: "Henry Ford" },
+    { text: "The difference between try and triumph is a little umph.", author: "Marvin Phillips" },
+    { text: "Don't stop when you're tired. Stop when you're done.", author: "Unknown" },
+    { text: "Results happen over time, not overnight. Work hard, stay consistent, be patient.", author: "Unknown" },
+    { text: "You are one workout away from a good mood.", author: "Unknown" },
+    { text: "Strength does not come from physical capacity. It comes from indomitable will.", author: "Mahatma Gandhi" },
+    { text: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson" },
+    { text: "Champions are made from something they have deep inside — a desire, a dream, a vision.", author: "Muhammad Ali" },
+    { text: "If it doesn't challenge you, it doesn't change you.", author: "Fred DeVito" },
+    { text: "You didn't come this far to only come this far.", author: "Unknown" },
+    { text: "Motivation gets you started. Habit keeps you going.", author: "Jim Ryun" },
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "Be stronger than your excuses.", author: "Unknown" },
+    { text: "Every champion was once a contender that refused to give up.", author: "Rocky Balboa" },
+    { text: "You have to expect things of yourself before you can do them.", author: "Michael Jordan" },
+    { text: "The only way to define your limits is by going beyond them.", author: "Arthur C. Clarke" },
+    { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+    { text: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
+    { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
+    { text: "Push harder than yesterday if you want a different tomorrow.", author: "Unknown" },
+    { text: "The pain of discipline is far less than the pain of regret.", author: "Sarah Bombell" },
+    { text: "One hour of discomfort a day keeps the mediocrity away.", author: "Unknown" },
+    { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" },
+    { text: "Iron rusts from disuse, water loses its purity from stagnation. Even so does inaction sap the vigor of the mind.", author: "Leonardo da Vinci" },
+    { text: "If you want something you've never had, you must be willing to do something you've never done.", author: "Thomas Jefferson" },
+  ];
+  let qIndex = 0;
+  function refreshQuote() {
+    qIndex = (qIndex + 1) % quotes.length;
+    const q = quotes[qIndex];
+    const el = document.getElementById('quote-text');
+    const ea = document.getElementById('quote-author');
+    el.style.opacity = 0; ea.style.opacity = 0;
+    setTimeout(() => {
+      el.textContent = q.text;
+      ea.textContent = '— ' + q.author;
+      el.style.transition = 'opacity 0.4s'; ea.style.transition = 'opacity 0.4s';
+      el.style.opacity = 1; ea.style.opacity = 1;
+    }, 300);
+  }
+
+  // ---- DATE ----
+  function setDashDate() {
+    const d = new Date();
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('dash-date').textContent = d.toLocaleDateString('en-US', opts).toUpperCase();
+  }
+
+</script>
+
+<div id="page-challenges" class="page" style="background:var(--black);">
+
+  <!-- NAV (reuse dash nav style) -->
+  <nav class="dash-nav">
+    <div class="dash-logo">RAW<span style="color:var(--red);">.</span>PROGRESS</div>
+    <div class="dash-nav-right">
+      <span class="dash-nav-link" onclick="showDashboard()">Dashboard</span>
+      <span class="dash-nav-link active-link">Challenges</span>
+      <span class="dash-nav-link">Leaderboard</span>
+      <span class="dash-nav-link">Community</span>
+      <div class="user-chip">
+        <div class="user-avatar">Y</div>
+        <span>You</span>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">LOG OUT</button>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <div style="padding:2.5rem 3rem 1.5rem;border-bottom:1px solid #1a1a1a;">
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:0.5rem;">// Your challenges</p>
+    <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);color:var(--white);line-height:1;">PICK YOUR BATTLE</h1>
+  </div>
+
+  <!-- MODE BUTTONS -->
+  <div style="display:flex;gap:1px;background:#1a1a1a;border-bottom:1px solid #1a1a1a;">
+    <button id="cpbtn-daily" class="cp-mode-btn active" onclick="showChallengesPage('daily')">DAILY</button>
+    <button id="cpbtn-weekly" class="cp-mode-btn" onclick="showChallengesPage('weekly')">WEEKLY</button>
+    <button id="cpbtn-monthly" class="cp-mode-btn" onclick="showChallengesPage('monthly')">MONTHLY</button>
+  </div>
+
+  <!-- FILTERS -->
+  <div style="padding:1.2rem 3rem;border-bottom:1px solid #1a1a1a;display:flex;gap:0.8rem;flex-wrap:wrap;align-items:center;">
+    <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:#444;margin-right:0.5rem;">FILTER:</span>
+
+    <button class="cp-filter-btn" data-type="cat" onclick="toggleFilter('cat','Fitness',this)">💪 Fitness</button>
+    <button class="cp-filter-btn" data-type="cat" onclick="toggleFilter('cat','Nutrition',this)">🥗 Nutrition</button>
+    <button class="cp-filter-btn" data-type="cat" onclick="toggleFilter('cat','Mindset',this)">🧠 Mindset</button>
+
+    <div style="width:1px;height:20px;background:#2a2a2a;margin:0 0.3rem;"></div>
+
+    <button class="cp-filter-btn" data-type="diff" onclick="toggleFilter('diff','Easy',this)">Easy</button>
+    <button class="cp-filter-btn" data-type="diff" onclick="toggleFilter('diff','Medium',this)">Medium</button>
+    <button class="cp-filter-btn" data-type="diff" onclick="toggleFilter('diff','Hard',this)">Hard</button>
+
+    <div style="width:1px;height:20px;background:#2a2a2a;margin:0 0.3rem;"></div>
+
+    <button class="cp-filter-btn cp-shuffle" onclick="shuffleChallenge()">🔀 Random</button>
+  </div>
+
+  <!-- CHALLENGE CARD AREA -->
+  <div style="padding:2rem 3rem;display:flex;flex-direction:column;align-items:center;position:relative;">
+
+    <!-- PAYWALL OVERLAY -->
+    <div id="cp-paywall" style="display:none;position:absolute;inset:0;background:#0a0a0a;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem;">
+      <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--white);margin-bottom:0.5rem;">CHALLENGES LOCKED</h2>
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:2px;color:#555;margin-bottom:2rem;">Subscribe to access all daily, weekly and monthly challenges.</p>
+      <button onclick="window.open('https://buy.stripe.com/test_8x228t6Z7eTz88zh1g2VG00','_blank')" style="font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;letter-spacing:3px;text-transform:uppercase;background:var(--red);color:var(--white);border:none;padding:1rem 2.5rem;cursor:none;">UNLOCK FOR $6.99/MO →</button>
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;color:#333;margin-top:1rem;letter-spacing:1px;">7 days free — cancel anytime</p>
+    </div>
+
+    <!-- COUNTER + NAVIGATION -->
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;max-width:700px;margin-bottom:1.2rem;">
+      <button onclick="prevChallenge()" style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;background:transparent;color:#444;border:1px solid #222;padding:0.5rem 1.2rem;cursor:none;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.borderColor='#555'" onmouseout="this.style.color='#444';this.style.borderColor='#222'">← PREV</button>
+      <span id="cp-counter" style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:3px;text-transform:uppercase;color:#444;">1 / 15</span>
+      <button onclick="nextChallenge()" style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;background:transparent;color:#444;border:1px solid #222;padding:0.5rem 1.2rem;cursor:none;transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.borderColor='#555'" onmouseout="this.style.color='#444';this.style.borderColor='#222'">NEXT →</button>
+    </div>
+
+    <!-- THE CARD -->
+    <div id="cp-card" style="width:100%;max-width:700px;background:var(--black-2);border:1px solid #1e1e1e;border-top:3px solid var(--red);padding:2.5rem;min-height:320px;">
+    </div>
+
+  </div>
+
+</div>
+
+<style>
+  .cp-mode-btn {
+    flex:1; padding:1.2rem;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:1rem; letter-spacing:4px; text-transform:uppercase;
+    background:var(--black-2); color:#444; border:none; cursor:none;
+    transition:all 0.2s;
+  }
+  .cp-mode-btn:hover { color:var(--white); background:#161616; }
+  .cp-mode-btn.active { color:var(--white); background:var(--black); border-bottom:3px solid var(--red); }
+
+  .cp-filter-btn {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:0.75rem; letter-spacing:2px; text-transform:uppercase;
+    background:transparent; color:#444; border:1px solid #222;
+    padding:0.4rem 1rem; cursor:none; transition:all 0.2s;
+  }
+  .cp-filter-btn:hover { color:var(--white); border-color:#555; }
+  .cp-filter-btn.active { color:var(--white); border-color:var(--red); background:rgba(204,0,0,0.08); }
+  .cp-shuffle.active { border-color:#7c6af7; color:#7c6af7; background:rgba(124,106,247,0.08); }
+</style>
+
+<script>
+  window.addEventListener('load', function() {
+    renderChallenge();
+    checkSession();
+  });
+
+  // ---- SUPABASE AUTH ----
+  const SUPABASE_URL = 'https://pgiczpzqwerfnnvtpsvq.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_gg5McufbFCqgka-Sl7g2bQ_f2fG6fge';
+  let rpClient = null;
+  let isSubscribed = false;
+
+  function initSupabase() {
+    return new Promise((resolve) => {
+      if (rpClient) { resolve(); return; }
+      const tryInit = () => {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          rpClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          resolve();
+        } else {
+          setTimeout(tryInit, 100);
+        }
+      };
+      tryInit();
+    });
+  }
+
+  async function checkSubscription(userId) {
+    try {
+      const { data, error } = await rpClient
+        .from('profiles')
+        .select('is_subscribed')
+        .eq('user_id', userId)
+        .single();
+      if (!error && data) {
+        isSubscribed = data.is_subscribed === true;
+      }
+    } catch(e) { console.log('Subscription check failed:', e); }
+  }
+
+  async function checkSession() {
+    try {
+      await initSupabase();
+      if (!rpClient) return;
+      const { data: { session } } = await rpClient.auth.getSession();
+      if (session) {
+        const name = session.user.user_metadata?.full_name || session.user.email;
+        document.getElementById('user-name').textContent = name.split(' ')[0];
+        document.getElementById('user-avatar').textContent = name[0].toUpperCase();
+        await checkSubscription(session.user.id);
+        showDashboard();
+      }
+    } catch(e) { console.log('Session check failed:', e); }
+  }
+
+  async function handleLogin() {
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('login-error');
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    err.style.display = 'none';
+
+    if (!email || !password) {
+      err.textContent = 'Please fill in all fields.';
+      err.style.display = 'block'; return;
+    }
+
+    btn.textContent = 'SIGNING IN...';
+    btn.disabled = true;
+
+    try {
+      await initSupabase();
+      if (!rpClient) throw new Error('Connection failed');
+
+      const { data, error } = await rpClient.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        err.textContent = error.message === 'Invalid login credentials' ? 'Wrong email or password.' : error.message;
+        err.style.display = 'block';
+      } else {
+        const name = data.user.user_metadata?.full_name || data.user.email;
+        document.getElementById('user-name').textContent = name.split(' ')[0];
+        document.getElementById('user-avatar').textContent = name[0].toUpperCase();
+        await checkSubscription(data.user.id);
+        showDashboard();
+      }
+    } catch(e) {
+      err.textContent = '⚠ Something went wrong: ' + e.message;
+      err.style.display = 'block';
+    }
+
+    btn.textContent = 'ENTER THE MOVEMENT →';
+    btn.disabled = false;
+  }
+
+  async function handleLogout() {
+    try {
+      await initSupabase();
+      if (rpClient) await rpClient.auth.signOut();
+    } catch(e) {}
+    showLanding();
+  }
+
+  // ---- PROFILE ----
+  function showCreateProfile() { showPage('page-create-profile'); }
+
+  function showProfile() {
+    showPage('page-profile');
+    loadProfile();
+  }
+
+  function loadProfile() {
+    const avatar = document.getElementById('profile-avatar-display');
+    const name = document.getElementById('profile-name-display');
+    const username = document.getElementById('profile-username-display');
+    const bio = document.getElementById('profile-bio-display');
+    const joined = document.getElementById('profile-joined');
+
+    const saved = JSON.parse(localStorage.getItem('rp_profile') || '{}');
+    if (saved.name) name.textContent = saved.name;
+    if (saved.username) username.textContent = '@' + saved.username;
+    if (saved.bio) bio.textContent = saved.bio;
+    if (saved.avatar) {
+      avatar.style.backgroundImage = 'url(' + saved.avatar + ')';
+      avatar.style.backgroundSize = 'cover';
+      avatar.textContent = '';
+    } else {
+      avatar.textContent = (saved.name || 'U')[0].toUpperCase();
+    }
+    joined.textContent = 'Joined ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
+  function handleAvatarUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = document.getElementById('avatar-preview');
+      preview.style.backgroundImage = 'url(' + e.target.result + ')';
+      preview.style.backgroundSize = 'cover';
+      preview.style.backgroundPosition = 'center';
+      preview.textContent = '';
+      preview.dataset.imgData = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function saveProfile() {
+    const username = document.getElementById('cp-username').value.trim();
+    const bio = document.getElementById('cp-bio').value.trim();
+    const privacy = document.querySelector('input[name="privacy"]:checked').value;
+    const preview = document.getElementById('avatar-preview');
+    const err = document.getElementById('cp-profile-error');
+
+    if (!username) {
+      err.textContent = '⚠ Username is required.';
+      err.style.display = 'block'; return;
+    }
+    if (username.length < 3) {
+      err.textContent = '⚠ Username must be at least 3 characters.';
+      err.style.display = 'block'; return;
+    }
+
+    const nameEl = document.getElementById('user-name');
+    const profile = {
+      name: nameEl ? nameEl.textContent : 'User',
+      username: username.toLowerCase().replace(/\s/g, ''),
+      bio: bio,
+      privacy: privacy,
+      avatar: preview.dataset.imgData || '',
+      joined: new Date().toISOString()
+    };
+
+    try { localStorage.setItem('rp_profile', JSON.stringify(profile)); } catch(e) {}
+    err.style.display = 'none';
+    showDashboard();
+  }
+</script>
+
+<!-- ===== CREATE PROFILE PAGE ===== -->
+<div id="page-create-profile" class="page" style="background:var(--black);">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;">
+    <div style="width:100%;max-width:520px;">
+
+      <!-- LOGO -->
+      <div style="text-align:center;margin-bottom:2rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;color:var(--white);">RAW<span style="color:var(--red);">.</span>PROGRESS</div>
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:#444;margin-top:0.3rem;">Set up your profile</p>
+      </div>
+
+      <!-- STEPS -->
+      <div style="display:flex;margin-bottom:2rem;">
+        <div style="flex:1;text-align:center;padding:0.6rem;border-bottom:2px solid #222;"><span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;">01 Account</span></div>
+        <div style="flex:1;text-align:center;padding:0.6rem;border-bottom:2px solid #222;"><span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;">02 Payment</span></div>
+        <div style="flex:1;text-align:center;padding:0.6rem;border-bottom:2px solid var(--red);"><span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--red);">03 Your Profile</span></div>
+      </div>
+
+      <div style="background:#111;border:1px solid #1e1e1e;border-top:3px solid var(--red);padding:2.5rem;">
+
+        <!-- AVATAR UPLOAD -->
+        <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:2rem;">
+          <div id="avatar-preview" style="width:90px;height:90px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--white);cursor:none;border:3px solid #222;margin-bottom:0.8rem;">R</div>
+          <label style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:#555;cursor:none;border:1px solid #2a2a2a;padding:0.4rem 1rem;transition:all 0.2s;">
+            UPLOAD PHOTO
+            <input type="file" accept="image/*" style="display:none;" onchange="handleAvatarUpload(this)"/>
+          </label>
+        </div>
+
+        <!-- USERNAME -->
+        <div class="form-group">
+          <label>Username <span style="color:var(--red);">*</span></label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;color:#444;font-size:1rem;">@</span>
+            <input type="text" id="cp-username" placeholder="yourname" style="padding-left:2rem;" maxlength="20"/>
+          </div>
+          <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;color:#333;letter-spacing:1px;margin-top:0.3rem;">Letters, numbers, underscores only. Max 20 characters.</p>
+        </div>
+
+        <!-- BIO -->
+        <div class="form-group">
+          <label>Bio <span style="color:#333;font-size:0.7rem;">(optional)</span></label>
+          <textarea id="cp-bio" placeholder="Tell the community who you are..." style="width:100%;padding:0.85rem 1rem;background:#0d0d0d;border:1px solid #2a2a2a;color:var(--white);font-family:'Barlow',sans-serif;font-size:0.9rem;outline:none;resize:none;height:90px;transition:border-color 0.2s;" maxlength="150" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='#2a2a2a'"></textarea>
+          <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;color:#333;letter-spacing:1px;margin-top:0.3rem;">Max 150 characters.</p>
+        </div>
+
+        <!-- PRIVACY -->
+        <div class="form-group">
+          <label>Account Privacy</label>
+          <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:none;">
+              <input type="radio" name="privacy" value="public" checked style="accent-color:var(--red);"/>
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;letter-spacing:1px;color:#888;">Public — visible on leaderboard</span>
+            </label>
+          </div>
+          <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:none;">
+              <input type="radio" name="privacy" value="private" style="accent-color:var(--red);"/>
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;letter-spacing:1px;color:#888;">Private — only you see your progress</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="cp-profile-error" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--red);margin-bottom:0.8rem;letter-spacing:1px;"></div>
+
+        <button onclick="saveProfile()" style="width:100%;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;letter-spacing:3px;text-transform:uppercase;background:var(--red);color:var(--white);border:none;padding:1rem;cursor:none;transition:background 0.2s;" onmouseover="this.style.background='#ff1a1a'" onmouseout="this.style.background='var(--red)'">ENTER THE MOVEMENT →</button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PROFILE VIEW PAGE ===== -->
+<div id="page-profile" class="page" style="background:var(--black);">
+  <nav class="dash-nav">
+    <div class="dash-logo">RAW<span style="color:var(--red);">.</span>PROGRESS</div>
+    <div class="dash-nav-right">
+      <span class="dash-nav-link" onclick="showDashboard()">Dashboard</span>
+      <span class="dash-nav-link" onclick="showChallenges()">Challenges</span>
+      <span class="dash-nav-link">Leaderboard</span>
+      <span class="dash-nav-link">Community</span>
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar-profile">Y</div>
+        <span id="user-name-profile">You</span>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">LOG OUT</button>
+    </div>
+  </nav>
+
+  <!-- PROFILE HERO -->
+  <div style="padding:3rem;border-bottom:1px solid #1a1a1a;display:flex;gap:2.5rem;align-items:flex-start;">
+    <div id="profile-avatar-display" style="width:100px;height:100px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--white);border:3px solid #222;flex-shrink:0;">Y</div>
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.3rem;">
+        <h1 id="profile-name-display" style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--white);line-height:1;">Your Name</h1>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#4caf50;border:1px solid #4caf5033;padding:0.2rem 0.6rem;">ACTIVE</span>
+      </div>
+      <p id="profile-username-display" style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--red);margin-bottom:0.8rem;">@username</p>
+      <p id="profile-bio-display" style="font-size:0.95rem;color:#666;line-height:1.6;max-width:500px;margin-bottom:1rem;">No bio yet.</p>
+      <p id="profile-joined" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:#333;"></p>
+    </div>
+    <button onclick="showCreateProfile()" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#444;border:1px solid #222;padding:0.5rem 1.2rem;cursor:none;transition:all 0.2s;flex-shrink:0;" onmouseover="this.style.color='#fff';this.style.borderColor='#555'" onmouseout="this.style.color='#444';this.style.borderColor='#222'">EDIT PROFILE</button>
+    <button onclick="showPrivacySettings()" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#444;border:1px solid #222;padding:0.5rem 1.2rem;cursor:none;transition:all 0.2s;flex-shrink:0;">🔒 PRIVACY</button>
+  </div>
+
+  <!-- STATS -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#1a1a1a;border-bottom:1px solid #1a1a1a;">
+    <div style="background:#111;padding:1.5rem 2rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--red);">0</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;margin-top:0.2rem;">Challenges Done</div>
+    </div>
+    <div style="background:#111;padding:1.5rem 2rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--red);">0</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;margin-top:0.2rem;">Community Points</div>
+    </div>
+    <div style="background:#111;padding:1.5rem 2rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--red);">1</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;margin-top:0.2rem;">Day Streak</div>
+    </div>
+    <div style="background:#111;padding:1.5rem 2rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--red);">0</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#333;margin-top:0.2rem;">Rank</div>
+    </div>
+  </div>
+
+  <!-- RECENT ACTIVITY -->
+  <div style="padding:2.5rem 3rem 0;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--white);margin-bottom:1.5rem;">RECENT ACTIVITY</div>
+    <div style="background:#111;border:1px solid #1e1e1e;padding:3rem;text-align:center;">
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;letter-spacing:3px;text-transform:uppercase;color:#333;">No activity yet — start completing challenges!</p>
+      <button onclick="showChallenges()" style="margin-top:1.5rem;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:var(--red);color:var(--white);border:none;padding:0.7rem 1.5rem;cursor:none;">GO TO CHALLENGES →</button>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION MANAGEMENT -->
+  <div style="padding:2.5rem 3rem;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--white);margin-bottom:1.5rem;">SUBSCRIPTION</div>
+    <div style="background:#111;border:1px solid #1e1e1e;border-left:3px solid var(--red);padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1.5rem;">
+      <div>
+        <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem;">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--white);letter-spacing:2px;">RAW PROGRESS MONTHLY</span>
+          <span id="sub-badge" style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:#22c55e;border:1px solid #22c55e33;padding:0.2rem 0.6rem;">ACTIVE</span>
+        </div>
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;letter-spacing:1px;color:#555;">$6.99 / month · Full access to all challenges, leaderboard & community</p>
+      </div>
+      <button onclick="manageSubscription()" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#888;border:1px solid #333;padding:0.6rem 1.5rem;cursor:none;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.color='#fff';this.style.borderColor='#666'" onmouseout="this.style.color='#888';this.style.borderColor='#333'">MANAGE / CANCEL →</button>
+    </div>
+
+    <!-- Cancel modal -->
+    <div id="cancel-modal" style="display:none;margin-top:1.5rem;background:#0d0d0d;border:1px solid #1e1e1e;border-top:2px solid #333;padding:2rem 2.5rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--white);margin-bottom:0.8rem;letter-spacing:2px;">WE'RE SORRY TO SEE YOU GO</div>
+      <p style="font-family:'Barlow',sans-serif;font-size:0.9rem;color:#666;line-height:1.7;margin-bottom:1.5rem;">
+        Before you cancel, we'd love to know — <strong style="color:#888;">what could we do better?</strong><br>
+        Your feedback helps us build something people actually want to use.<br>
+        <span style="color:var(--red);">Don't go just yet.</span>
+      </p>
+
+      <!-- Feedback reasons -->
+      <div style="margin-bottom:1.5rem;">
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:#444;margin-bottom:0.8rem;">Why are you leaving?</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;" id="cancel-reasons">
+          <button onclick="selectReason(this)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:1px;background:transparent;color:#555;border:1px solid #222;padding:0.4rem 1rem;cursor:none;transition:all 0.2s;">Too expensive</button>
+          <button onclick="selectReason(this)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:1px;background:transparent;color:#555;border:1px solid #222;padding:0.4rem 1rem;cursor:none;transition:all 0.2s;">Not using it enough</button>
+          <button onclick="selectReason(this)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:1px;background:transparent;color:#555;border:1px solid #222;padding:0.4rem 1rem;cursor:none;transition:all 0.2s;">Missing features</button>
+          <button onclick="selectReason(this)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:1px;background:transparent;color:#555;border:1px solid #222;padding:0.4rem 1rem;cursor:none;transition:all 0.2s;">Found something better</button>
+          <button onclick="selectReason(this)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:1px;background:transparent;color:#555;border:1px solid #222;padding:0.4rem 1rem;cursor:none;transition:all 0.2s;">Technical issues</button>
+          <button onclick="selectReason(this)" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:1px;background:transparent;color:#555;border:1px solid #222;padding:0.4rem 1rem;cursor:none;transition:all 0.2s;">Other</button>
+        </div>
+        <textarea id="cancel-feedback" placeholder="Tell us more (optional)..." style="width:100%;background:#111;border:1px solid #1e1e1e;color:var(--white);font-family:'Barlow',sans-serif;font-size:0.85rem;padding:0.8rem 1rem;outline:none;resize:none;height:70px;transition:border-color 0.2s;" onfocus="this.style.borderColor='#444'" onblur="this.style.borderColor='#1e1e1e'"></textarea>
+      </div>
+
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <a href="https://billing.stripe.com/p/login/test_8x228t6Z7eTz88zh1g2VG00" target="_blank" onclick="submitCancelFeedback()" style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#666;border:1px solid #333;padding:0.7rem 1.5rem;cursor:none;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#666'">CANCEL SUBSCRIPTION →</a>
+        <button onclick="document.getElementById('cancel-modal').style.display='none'" style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:var(--red);color:var(--white);border:none;padding:0.7rem 1.5rem;cursor:none;transition:background 0.2s;" onmouseover="this.style.background='#ff1a1a'" onmouseout="this.style.background='var(--red)'">STAY IN THE MOVEMENT ✓</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== LEADERBOARD PAGE ===== -->
+<div id="page-leaderboard" class="page" style="background:var(--black);">
+  <nav class="dash-nav">
+    <div class="dash-logo">RAW<span style="color:var(--red);">.</span>PROGRESS</div>
+    <div class="dash-nav-right">
+      <span class="dash-nav-link" onclick="showDashboard()">Dashboard</span>
+      <span class="dash-nav-link" onclick="showChallenges()">Challenges</span>
+      <span class="dash-nav-link active-link">Leaderboard</span>
+      <span class="dash-nav-link">Community</span>
+      <span class="dash-nav-link" onclick="showProfile()">Profile</span>
+      <div class="user-chip">
+        <div class="user-avatar" id="lb-avatar">Y</div>
+        <span id="lb-name">You</span>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">LOG OUT</button>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <div style="padding:2.5rem 3rem 1.5rem;border-bottom:1px solid #1a1a1a;">
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:0.5rem;">// Community rankings</p>
+    <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);color:var(--white);line-height:1;">LEADERBOARD</h1>
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;color:#444;margin-top:0.4rem;">Top 100 members ranked by community points</p>
+  </div>
+
+  <!-- PAYWALL FOR NON SUBSCRIBERS -->
+  <div id="lb-paywall" style="display:none;padding:4rem 3rem;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:1rem;">🏆</div>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--white);margin-bottom:0.5rem;">SUBSCRIBERS ONLY</h2>
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:2px;color:#555;margin-bottom:2rem;">Subscribe to compete on the leaderboard and earn community points.</p>
+    <button onclick="showSignup()" style="font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;letter-spacing:3px;text-transform:uppercase;background:var(--red);color:var(--white);border:none;padding:1rem 2.5rem;cursor:none;">UNLOCK FOR $6.99/MO →</button>
+  </div>
+
+  <!-- LEADERBOARD TABLE -->
+  <div id="lb-content" style="padding:2rem 3rem;">
+
+    <!-- YOUR RANK -->
+    <div id="lb-your-rank" style="background:rgba(204,0,0,0.08);border:1px solid rgba(204,0,0,0.2);padding:1.2rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--red);min-width:40px;">—</span>
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--white);" id="lb-your-avatar">Y</div>
+      <div style="flex:1;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--red);">YOUR RANK</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--white);" id="lb-your-name">You</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--white);" id="lb-your-points">0</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:#444;">POINTS</div>
+      </div>
+    </div>
+
+    <!-- TOP 3 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1a1a1a;margin-bottom:1px;">
+      <div style="background:#111;padding:2rem;text-align:center;border-top:3px solid #ffd700;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🥇</div>
+        <div style="width:50px;height:50px;border-radius:50%;background:#ffd700;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0a0a0a;margin:0 auto 0.8rem;" id="lb-1-avatar">?</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--white);" id="lb-1-name">—</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#ffd700;" id="lb-1-pts">0</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:#444;">PTS</div>
+      </div>
+      <div style="background:#111;padding:2rem;text-align:center;border-top:3px solid #c0c0c0;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🥈</div>
+        <div style="width:50px;height:50px;border-radius:50%;background:#c0c0c0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0a0a0a;margin:0 auto 0.8rem;" id="lb-2-avatar">?</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--white);" id="lb-2-name">—</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#c0c0c0;" id="lb-2-pts">0</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:#444;">PTS</div>
+      </div>
+      <div style="background:#111;padding:2rem;text-align:center;border-top:3px solid #cd7f32;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🥉</div>
+        <div style="width:50px;height:50px;border-radius:50%;background:#cd7f32;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0a0a0a;margin:0 auto 0.8rem;" id="lb-3-avatar">?</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--white);" id="lb-3-name">—</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#cd7f32;" id="lb-3-pts">0</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:#444;">PTS</div>
+      </div>
+    </div>
+
+    <!-- RANKS 4-100 -->
+    <div id="lb-list" style="background:#111;border:1px solid #1a1a1a;">
+      <!-- populated by JS -->
+    </div>
+
+    <div id="lb-empty" style="display:none;background:#111;border:1px solid #1a1a1a;padding:3rem;text-align:center;">
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;letter-spacing:3px;text-transform:uppercase;color:#333;">No members on the leaderboard yet — be the first!</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== PROFILE PRIVACY SETTINGS PAGE ===== -->
+<div id="page-privacy" class="page" style="background:var(--black);">
+  <nav class="dash-nav">
+    <div class="dash-logo">RAW<span style="color:var(--red);">.</span>PROGRESS</div>
+    <div class="dash-nav-right">
+      <span class="dash-nav-link" onclick="showDashboard()">Dashboard</span>
+      <span class="dash-nav-link" onclick="showChallenges()">Challenges</span>
+      <span class="dash-nav-link" onclick="showLeaderboard()">Leaderboard</span>
+      <span class="dash-nav-link" onclick="showProfile()">Profile</span>
+      <div class="user-chip">
+        <div class="user-avatar">Y</div>
+        <span id="privacy-username">You</span>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">LOG OUT</button>
+    </div>
+  </nav>
+
+  <div style="padding:2.5rem 3rem 1.5rem;border-bottom:1px solid #1a1a1a;">
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:0.5rem;">// Settings</p>
+    <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);color:var(--white);line-height:1;">PRIVACY SETTINGS</h1>
+  </div>
+
+  <div style="padding:2.5rem 3rem;max-width:600px;">
+
+    <div style="background:#111;border:1px solid #1e1e1e;border-top:3px solid var(--red);padding:2rem;margin-bottom:1.5rem;">
+      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--white);margin-bottom:1.5rem;">WHAT OTHERS CAN SEE</h3>
+
+      <div class="privacy-row">
+        <div>
+          <div class="privacy-label">Profile visible on Leaderboard</div>
+          <div class="privacy-desc">Your name and points appear in the Top 100</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="priv-leaderboard" checked onchange="savePrivacy()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="privacy-row">
+        <div>
+          <div class="privacy-label">Show your username</div>
+          <div class="privacy-desc">Others can see your @username on your public profile</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="priv-username" checked onchange="savePrivacy()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="privacy-row">
+        <div>
+          <div class="privacy-label">Show your bio</div>
+          <div class="privacy-desc">Your bio is visible to other members</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="priv-bio" checked onchange="savePrivacy()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="privacy-row">
+        <div>
+          <div class="privacy-label">Show challenges completed</div>
+          <div class="privacy-desc">Others can see how many challenges you've done</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="priv-challenges" checked onchange="savePrivacy()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="privacy-row" style="border-bottom:none;">
+        <div>
+          <div class="privacy-label">Show community points</div>
+          <div class="privacy-desc">Your point total is visible on your public profile</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="priv-points" checked onchange="savePrivacy()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div style="background:#111;border:1px solid #1e1e1e;padding:2rem;">
+      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--white);margin-bottom:1.5rem;">ACCOUNT TYPE</h3>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <label style="display:flex;align-items:center;gap:1rem;cursor:none;padding:1rem;border:1px solid #222;transition:border-color 0.2s;" id="public-option">
+          <input type="radio" name="account-type" value="public" checked style="accent-color:var(--red);" onchange="savePrivacy()"/>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--white);">Public Account</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:#555;">Visible on leaderboard and community feed</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;gap:1rem;cursor:none;padding:1rem;border:1px solid #222;transition:border-color 0.2s;" id="private-option">
+          <input type="radio" name="account-type" value="private" style="accent-color:var(--red);" onchange="savePrivacy()"/>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--white);">Private Account</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:#555;">Only you see your progress — hidden from community</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div id="privacy-saved" style="display:none;margin-top:1rem;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;letter-spacing:2px;text-transform:uppercase;color:#4caf50;">✓ Settings saved</div>
+
+    <button onclick="showProfile()" style="margin-top:1.5rem;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#555;border:1px solid #222;padding:0.7rem 1.5rem;cursor:none;">← BACK TO PROFILE</button>
+  </div>
+</div>
+
+<style>
+/* ===== PRIVACY SETTINGS ===== */
+.privacy-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1rem 0; border-bottom:1px solid #1a1a1a; gap:1rem;
+}
+.privacy-label {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:0.95rem; letter-spacing:1px; color:var(--white);
+  text-transform:uppercase;
+}
+.privacy-desc {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:0.75rem; color:#444; margin-top:0.2rem; letter-spacing:1px;
+}
+.toggle-switch { position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-slider {
+  position:absolute; inset:0; background:#222; cursor:none;
+  border-radius:24px; transition:background 0.2s;
+}
+.toggle-slider::before {
+  content:''; position:absolute;
+  width:18px; height:18px; left:3px; bottom:3px;
+  background:#555; border-radius:50%; transition:all 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background:var(--red); }
+.toggle-switch input:checked + .toggle-slider::before { transform:translateX(20px); background:var(--white); }
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  /* NAV */
+  .dash-nav { padding:0.8rem 1rem; flex-wrap:wrap; gap:0.5rem; }
+  .dash-nav-right { gap:0.8rem; flex-wrap:wrap; }
+  .dash-nav-link { font-size:0.65rem; }
+  .dash-logo { font-size:1rem; }
+
+  /* LANDING */
+  .landing-nav { padding:1rem 1.5rem; }
+  .landing-nav .nav-links { gap:0.8rem; }
+  .landing-nav .nav-links a { display:none; }
+  .hero { padding:2rem 1.5rem; min-height:70vh; }
+  .hero-title { font-size:clamp(3.5rem,18vw,6rem); }
+  .hero-motto { font-size:0.9rem; letter-spacing:3px; }
+  .hero-sub { font-size:0.9rem; }
+  .hero-actions { flex-direction:column; gap:0.8rem; }
+  .btn-primary, .btn-ghost { width:100%; text-align:center; padding:0.9rem 1.5rem; }
+
+  /* MONEY COMPARISON SECTION */
+  .hero ~ div[style*="grid-template-columns:1fr 1px 1fr"] {
+    grid-template-columns:1fr !important;
+  }
+
+  /* PILLARS */
+  .pillars { grid-template-columns:1fr !important; }
+  .pillar { padding:2rem 1.5rem; border-right:none !important; }
+
+  /* STATS ROW */
+  .stats-row { grid-template-columns:repeat(2,1fr) !important; margin:1.5rem 1rem !important; }
+
+  /* DASHBOARD */
+  .dash-hero { padding:1.5rem; }
+  .dash-headline { font-size:2.5rem; }
+
+  /* QUOTE */
+  .quote-section { padding:1.5rem; }
+  .quote-text { font-size:1.1rem !important; }
+
+  /* CHALLENGES */
+  .challenges-section { padding:1.5rem; }
+  .challenge-grid { grid-template-columns:1fr !important; }
+  .challenge-tabs { overflow-x:auto; }
+
+  /* CHALLENGES PAGE */
+  #page-challenges .dash-nav-right { display:none; }
+  .cp-mode-btn { font-size:0.75rem; padding:0.8rem 0.5rem; letter-spacing:2px; }
+
+  /* CHALLENGE CARD */
+  #cp-card { padding:1.5rem; }
+
+  /* LEADERBOARD */
+  #page-leaderboard .dash-nav-right { display:none; }
+  #lb-content { padding:1rem; }
+  #lb-content > div[style*="grid-template-columns:repeat(3"] {
+    grid-template-columns:1fr !important;
+  }
+
+  /* PROFILE */
+  #page-profile .dash-nav-right { display:none; }
+  #page-profile > div[style*="padding:3rem"] {
+    flex-direction:column !important;
+    padding:1.5rem !important;
+  }
+  #profile-avatar-display { width:70px !important; height:70px !important; font-size:2rem !important; }
+
+  /* LOGIN/SIGNUP */
+  .login-box { padding:2rem 1.5rem; margin:1rem; }
+  #page-create-profile .login-box { margin:1rem; }
+
+  /* SOCIAL FOOTER */
+  .social-footer { flex-direction:column; gap:0.8rem; padding:1.5rem; }
+
+  /* MOBILE NAV BOTTOM BAR */
+  .mobile-nav {
+    display:flex !important;
+  }
+}
+
+/* MOBILE BOTTOM NAV */
+.mobile-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  background:#111; border-top:1px solid #1e1e1e;
+  z-index:1000; padding:0.5rem 0;
+}
+.mobile-nav-item {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  gap:0.2rem; padding:0.5rem; cursor:none;
+}
+.mobile-nav-icon { font-size:1.2rem; }
+.mobile-nav-label {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:0.55rem; letter-spacing:1px; text-transform:uppercase; color:#555;
+}
+.mobile-nav-item.active .mobile-nav-label { color:var(--red); }
+
+@media (max-width: 768px) {
+  /* Add bottom padding to all pages so content isn't hidden behind mobile nav */
+  #page-dashboard, #page-challenges, #page-leaderboard, #page-profile { padding-bottom:70px; }
+}
+</style>
+
+<!-- MOBILE BOTTOM NAV (shows on mobile only) -->
+<div class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-item active" onclick="showDashboard()" id="mn-dashboard">
+    <span class="mobile-nav-icon">🏠</span>
+    <span class="mobile-nav-label">Home</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showChallenges()" id="mn-challenges">
+    <span class="mobile-nav-icon">⚡</span>
+    <span class="mobile-nav-label">Challenges</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showLeaderboard()" id="mn-leaderboard">
+    <span class="mobile-nav-icon">🏆</span>
+    <span class="mobile-nav-label">Leaderboard</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showProfile()" id="mn-profile">
+    <span class="mobile-nav-icon">👤</span>
+    <span class="mobile-nav-label">Profile</span>
+  </div>
+</div>
+
+<script>
+  // ---- LEADERBOARD ----
+  function showLeaderboard() {
+    showPage('page-leaderboard');
+    document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active-link'));
+    const navEl = document.getElementById('nav-leaderboard');
+    if (navEl) navEl.classList.add('active-link');
+    updateMobileNav('leaderboard');
+
+    const paywall = document.getElementById('lb-paywall');
+    const content = document.getElementById('lb-content');
+    if (!isSubscribed) {
+      if (paywall) paywall.style.display = 'block';
+      if (content) content.style.display = 'none';
+      return;
+    }
+    if (paywall) paywall.style.display = 'none';
+    if (content) content.style.display = 'block';
+    renderLeaderboard();
+
+    // Sync avatar/name
+    const nameEl = document.getElementById('user-name');
+    const avatarEl = document.getElementById('user-avatar');
+    if (nameEl) document.getElementById('lb-name').textContent = nameEl.textContent;
+    if (avatarEl) document.getElementById('lb-avatar').textContent = avatarEl.textContent;
+    document.getElementById('lb-your-name').textContent = nameEl ? nameEl.textContent : 'You';
+    document.getElementById('lb-your-avatar').textContent = avatarEl ? avatarEl.textContent : 'Y';
+  }
+
+  function renderLeaderboard() {
+    // Demo data — will be replaced with real Supabase data
+    const saved = JSON.parse(localStorage.getItem('rp_profile') || '{}');
+    const myName = saved.username ? '@' + saved.username : (document.getElementById('user-name')?.textContent || 'You');
+    const myPts = parseInt(localStorage.getItem('rp_community_points') || '0');
+
+    // Update your rank card
+    document.getElementById('lb-your-points').textContent = myPts;
+
+    // Demo top 3
+    const top3Names = ['—', '—', '—'];
+    const top3Pts = [0, 0, 0];
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById('lb-' + i + '-name').textContent = top3Names[i-1];
+      document.getElementById('lb-' + i + '-pts').textContent = top3Pts[i-1];
+      document.getElementById('lb-' + i + '-avatar').textContent = top3Names[i-1][0] || '?';
+    }
+
+    // Ranks 4-100 empty state
+    const list = document.getElementById('lb-list');
+    const empty = document.getElementById('lb-empty');
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    list.style.display = 'none';
+  }
+
+  // ---- PRIVACY SETTINGS ----
+  function showPrivacySettings() {
+    showPage('page-privacy');
+    loadPrivacySettings();
+  }
+
+  function manageSubscription() {
+    const modal = document.getElementById('cancel-modal');
+    modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function selectReason(btn) {
+    document.querySelectorAll('#cancel-reasons button').forEach(b => {
+      b.style.color = '#555';
+      b.style.borderColor = '#222';
+      b.style.background = 'transparent';
+    });
+    btn.style.color = 'var(--white)';
+    btn.style.borderColor = 'var(--red)';
+    btn.style.background = 'rgba(204,0,0,0.08)';
+  }
+
+  function submitCancelFeedback() {
+    const reason = document.querySelector('#cancel-reasons button[style*="var(--red)"]')?.textContent || '';
+    const feedback = document.getElementById('cancel-feedback')?.value || '';
+    // Salvăm feedback-ul local (în viitor trimis pe email)
+    const data = { reason, feedback, date: new Date().toISOString() };
+    try { localStorage.setItem('rp_cancel_feedback', JSON.stringify(data)); } catch(e) {}
+    console.log('Cancel feedback:', data);
+  }
+
+  function loadPrivacySettings() {
+    const priv = JSON.parse(localStorage.getItem('rp_privacy') || '{}');
+    const defaults = { leaderboard:true, username:true, bio:true, challenges:true, points:true, type:'public' };
+    const settings = Object.assign(defaults, priv);
+    document.getElementById('priv-leaderboard').checked = settings.leaderboard;
+    document.getElementById('priv-username').checked = settings.username;
+    document.getElementById('priv-bio').checked = settings.bio;
+    document.getElementById('priv-challenges').checked = settings.challenges;
+    document.getElementById('priv-points').checked = settings.points;
+    document.querySelector('input[name="account-type"][value="' + settings.type + '"]').checked = true;
+  }
+
+  function savePrivacy() {
+    const settings = {
+      leaderboard: document.getElementById('priv-leaderboard').checked,
+      username: document.getElementById('priv-username').checked,
+      bio: document.getElementById('priv-bio').checked,
+      challenges: document.getElementById('priv-challenges').checked,
+      points: document.getElementById('priv-points').checked,
+      type: document.querySelector('input[name="account-type"]:checked')?.value || 'public'
+    };
+    try { localStorage.setItem('rp_privacy', JSON.stringify(settings)); } catch(e) {}
+    const saved = document.getElementById('privacy-saved');
+    if (saved) {
+      saved.style.display = 'block';
+      setTimeout(() => saved.style.display = 'none', 2000);
+    }
+  }
+
+  // ---- MOBILE NAV ----
+  function updateMobileNav(page) {
+    document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById('mn-' + page);
+    if (el) el.classList.add('active');
+  }
+
+  // Update existing show functions to sync mobile nav
+  const _origShowDash = showDashboard;
+  showDashboard = function() { _origShowDash(); updateMobileNav('dashboard'); };
+  const _origShowChal = showChallenges;
+  showChallenges = function() { _origShowChal(); updateMobileNav('challenges'); };
+  const _origShowProf = showProfile;
+  showProfile = function() { _origShowProf(); updateMobileNav('profile'); };
+</script>
+</body>
+</html>
