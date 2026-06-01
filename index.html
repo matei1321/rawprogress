@@ -5144,17 +5144,24 @@
   z-index:9999; padding:0.5rem 0;
   -webkit-transform: translateZ(0);
 }
-/* Show on mobile/touch when logged in */
+/* Show nav on mobile when any app page is active */
 @media (max-width: 1024px) {
+  body:has(#page-dashboard.active) .mobile-nav,
+  body:has(#page-challenges.active) .mobile-nav,
+  body:has(#page-tips.active) .mobile-nav,
+  body:has(#page-profile.active) .mobile-nav,
+  body:has(#page-leaderboard.active) .mobile-nav,
+  body:has(#page-community.active) .mobile-nav,
+  body:has(#page-chat.active) .mobile-nav,
+  body:has(#page-preferences.active) .mobile-nav,
   body.logged-in .mobile-nav {
     display:-webkit-box !important;
     display:-webkit-flex !important;
     display:flex !important;
-    -webkit-flex-direction:row;
-    flex-direction:row;
+    -webkit-flex-direction:row !important;
+    flex-direction:row !important;
   }
 }
-/* Always hidden on desktop */
 @media (min-width: 1025px) {
   .mobile-nav { display:none !important; }
 }
