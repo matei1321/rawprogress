@@ -5198,30 +5198,6 @@
 }
 </style>
 
-<!-- MOBILE BOTTOM NAV (shows on mobile only) -->
-<div class="mobile-nav" id="mobile-nav" style="display:flex !important;flex-direction:row;position:fixed;bottom:0;left:0;right:0;background:#111;border-top:2px solid #e00;z-index:99999;padding:0.5rem 0;">
-  <div class="mobile-nav-item active" onclick="showDashboard()" id="mn-dashboard">
-    <span class="mobile-nav-icon">🏠</span>
-    <span class="mobile-nav-label">Home</span>
-  </div>
-  <div class="mobile-nav-item" onclick="showChallenges()" id="mn-challenges">
-    <span class="mobile-nav-icon">⚡</span>
-    <span class="mobile-nav-label">Challenges</span>
-  </div>
-  <div class="mobile-nav-item" onclick="showChat(null,null)" id="mn-chat" style="position:relative;display:none !important;">
-    <span class="mobile-nav-icon">💬<span id="chat-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red);border-radius:50%;font-size:9px;color:#fff;font-weight:700;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;"></span></span>
-    <span class="mobile-nav-label">Messages</span>
-  </div>
-      
-  <div class="mobile-nav-item" onclick="showTips()" id="mn-tips">
-    <span class="mobile-nav-icon">💡</span>
-    <span class="mobile-nav-label">Tips</span>
-  </div>
-  <div class="mobile-nav-item" onclick="showProfile()" id="mn-profile">
-    <span class="mobile-nav-icon">👤</span>
-    <span class="mobile-nav-label">Profile</span>
-  </div>
-</div>
 
 <script>
   // ---- LEADERBOARD ----
@@ -6836,5 +6812,29 @@ window.renderProgram = function renderProgram() {
 }
 </script>
 
+<!-- MOBILE BOTTOM NAV (shows on mobile only) -->
+<div class="mobile-nav" id="mobile-nav" style="display:flex !important;flex-direction:row;position:fixed;bottom:0;left:0;right:0;background:#111;border-top:2px solid #e00;z-index:99999;padding:0.5rem 0;">
+  <div class="mobile-nav-item active" onclick="showDashboard()" id="mn-dashboard">
+    <span class="mobile-nav-icon">🏠</span>
+    <span class="mobile-nav-label">Home</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showChallenges()" id="mn-challenges">
+    <span class="mobile-nav-icon">⚡</span>
+    <span class="mobile-nav-label">Challenges</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showChat(null,null)" id="mn-chat" style="position:relative;display:none !important;">
+    <span class="mobile-nav-icon">💬<span id="chat-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red);border-radius:50%;font-size:9px;color:#fff;font-weight:700;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;"></span></span>
+    <span class="mobile-nav-label">Messages</span>
+  </div>
+      
+  <div class="mobile-nav-item" onclick="showTips()" id="mn-tips">
+    <span class="mobile-nav-icon">💡</span>
+    <span class="mobile-nav-label">Tips</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showProfile()" id="mn-profile">
+    <span class="mobile-nav-icon">👤</span>
+    <span class="mobile-nav-label">Profile</span>
+  </div>
+</div>
 </body>
 </html>
