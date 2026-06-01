@@ -1054,6 +1054,8 @@
      showPage('page-landing'); }
   function showDashboard() {
     document.body.classList.add('logged-in');
+    var nav = document.getElementById('mobile-nav');
+    if (nav) nav.style.setProperty('display', 'flex', 'important');
     showPage('page-dashboard');
     setDashDate();
     document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active-link'));
@@ -5138,17 +5140,15 @@
 
 /* MOBILE BOTTOM NAV — ONLY on phones */
 .mobile-nav {
-  display:none !important;
+  display:none;
   position:fixed; bottom:0; left:0; right:0;
   background:#111; border-top:2px solid #e00;
   z-index:9999; padding:0.5rem 0;
   -webkit-transform: translateZ(0);
 }
-@media only screen and (max-width: 768px) {
-  body.logged-in .mobile-nav { display:flex !important; flex-direction:row; }
-}
-@media only screen and (max-width: 1024px) and (pointer:coarse) {
-  body.logged-in .mobile-nav { display:flex !important; flex-direction:row; }
+/* Desktop: always hidden */
+@media only screen and (min-width: 1025px) {
+  .mobile-nav { display:none !important; }
 }
 .mobile-nav-item {
   flex:1; display:flex; flex-direction:column; align-items:center;
@@ -5401,8 +5401,19 @@
   // ---- MOBILE NAV ----
   function updateMobileNav(page) {
     document.body.classList.add('logged-in');
+    // Force nav visible directly — don't rely on CSS classes for iOS
+    var nav = document.getElementById('mobile-nav');
+    if (nav) {
+      nav.style.setProperty('display', 'flex', 'important');
+      nav.style.flexDirection = 'row';
+      nav.style.position = 'fixed';
+      nav.style.bottom = '0';
+      nav.style.left = '0';
+      nav.style.right = '0';
+      nav.style.zIndex = '9999';
+    }
     document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
-    const el = document.getElementById('mn-' + page);
+    var el = document.getElementById('mn-' + page);
     if (el) el.classList.add('active');
   }
 
