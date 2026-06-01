@@ -1053,7 +1053,7 @@
   function showLanding() {
      showPage('page-landing'); }
   function showDashboard() {
-    // Show mobile nav only when logged in
+    // Show mobile nav on all devices when logged in
     const nav = document.getElementById('mobile-nav');
     if (nav) nav.style.display = 'flex';
     showPage('page-dashboard');
@@ -3256,7 +3256,7 @@
 
   // ---- SUPABASE AUTH ----
   const SUPABASE_URL = 'https://pgiczpzqwerfnnvtpsvq.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_gg5McufbFCqgka-Sl7g2bQ_f2fG6fge';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnaWN6cHpxd2VyZm5udnRwc3ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MzczNDQsImV4cCI6MjA5NTExMzM0NH0.hJmxeo7gVLc9yJgrR7GrZgr2QavYXBSu0UIt_aTnZmk';
   let rpClient = null;
   let isSubscribed = false;
   let currentProfile = {}; // global cache for profile data
@@ -3363,7 +3363,7 @@
             if (el1) el1.textContent = dateStr;
             if (el2) el2.textContent = dateStr;
           } else if (pg === 'preferences') { showPreferences(); }
-          else { showDashboard(); }
+          else { showDashboard(); updateMobileNav('dashboard'); }
         } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
           if (!session) {
             sessionResolved = true;
@@ -3394,7 +3394,7 @@
           if (el1) el1.textContent = dateStr;
           if (el2) el2.textContent = dateStr;
         } else if (pg === 'preferences') { showPreferences(); }
-        else { showDashboard(); }
+        else { showDashboard(); updateMobileNav('dashboard'); }
       }
 
       // Safety timeout
@@ -3440,7 +3440,7 @@
         const _p = new URLSearchParams(window.location.search).get('page');
         if (_p === 'commit') showCommit();
         else if (_p === 'preferences') showPreferences();
-        else showDashboard();
+        else { showDashboard(); updateMobileNav('dashboard'); }
       }
     } catch(e) {
       err.textContent = '⚠ Something went wrong: ' + e.message;
@@ -5383,6 +5383,9 @@
 
   // ---- MOBILE NAV ----
   function updateMobileNav(page) {
+    // Always ensure nav is visible when navigating authenticated pages
+    const nav = document.getElementById('mobile-nav');
+    if (nav) nav.style.display = 'flex';
     document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
     const el = document.getElementById('mn-' + page);
     if (el) el.classList.add('active');
