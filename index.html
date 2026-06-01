@@ -1054,8 +1054,6 @@
      showPage('page-landing'); }
   function showDashboard() {
     document.body.classList.add('logged-in');
-    var nav = document.getElementById('mobile-nav');
-    if (nav) nav.style.setProperty('display', 'flex', 'important');
     showPage('page-dashboard');
     setDashDate();
     document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active-link'));
@@ -5138,7 +5136,7 @@
 
 }
 
-/* MOBILE BOTTOM NAV — ONLY on phones */
+/* MOBILE BOTTOM NAV */
 .mobile-nav {
   display:none;
   position:fixed; bottom:0; left:0; right:0;
@@ -5146,8 +5144,18 @@
   z-index:9999; padding:0.5rem 0;
   -webkit-transform: translateZ(0);
 }
-/* Desktop: always hidden */
-@media only screen and (min-width: 1025px) {
+/* Show on mobile/touch when logged in */
+@media (max-width: 1024px) {
+  body.logged-in .mobile-nav {
+    display:-webkit-box !important;
+    display:-webkit-flex !important;
+    display:flex !important;
+    -webkit-flex-direction:row;
+    flex-direction:row;
+  }
+}
+/* Always hidden on desktop */
+@media (min-width: 1025px) {
   .mobile-nav { display:none !important; }
 }
 .mobile-nav-item {
@@ -5401,18 +5409,12 @@
   // ---- MOBILE NAV ----
   function updateMobileNav(page) {
     document.body.classList.add('logged-in');
-    // Force nav visible directly — don't rely on CSS classes for iOS
     var nav = document.getElementById('mobile-nav');
     if (nav) {
-      nav.style.setProperty('display', 'flex', 'important');
-      nav.style.flexDirection = 'row';
-      nav.style.position = 'fixed';
-      nav.style.bottom = '0';
-      nav.style.left = '0';
-      nav.style.right = '0';
-      nav.style.zIndex = '9999';
+      // Force display directly for iOS Safari compatibility
+      nav.style.cssText = 'display:flex !important; flex-direction:row; position:fixed; bottom:0; left:0; right:0; background:#111; border-top:2px solid #e00; z-index:9999; padding:0.5rem 0; -webkit-transform:translateZ(0);';
     }
-    document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav-item').forEach(function(el) { el.classList.remove('active'); });
     var el = document.getElementById('mn-' + page);
     if (el) el.classList.add('active');
   }
