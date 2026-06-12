@@ -3269,7 +3269,15 @@
       const tryInit = () => {
         attempts++;
         if (window.supabase && typeof window.supabase.createClient === 'function') {
-          rpClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          rpClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+              persistSession: true,
+              storage: window.localStorage,
+              storageKey: 'rp_auth_v2',
+              autoRefreshToken: true,
+              detectSessionInUrl: true
+            }
+          });
           resolve();
         } else if (attempts < 60) {
           setTimeout(tryInit, 100);
@@ -3346,12 +3354,13 @@
 
       let sessionResolved = false;
 
-      // Primary: onAuthStateChange (works reliably on iOS Safari)
+      // Primary: onAuthStateChange — handles BOTH fresh login AND session restore on refresh
       const { data: { subscription } } = rpClient.auth.onAuthStateChange(async (event, session) => {
         if (sessionResolved) return;
-        if (event === 'SIGNED_IN' && session) {
+
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
           sessionResolved = true;
-          subscription.unsubscribe();
+          try { subscription.unsubscribe(); } catch(e) {}
           const name = session.user.user_metadata?.full_name || session.user.email;
           const nameEl = document.getElementById('user-name');
           const avatarEl = document.getElementById('user-avatar');
@@ -3370,11 +3379,16 @@
             if (el2) el2.textContent = dateStr;
           } else if (pg === 'preferences') { showPreferences(); }
           else { showDashboard(); updateMobileNav('dashboard'); }
-        } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
-          if (!session) {
-            sessionResolved = true;
-            subscription.unsubscribe();
-          }
+
+        } else if (event === 'SIGNED_OUT') {
+          sessionResolved = true;
+          try { subscription.unsubscribe(); } catch(e) {}
+          showLanding();
+
+        } else if (event === 'INITIAL_SESSION' && !session) {
+          // No stored session — user is logged out, stay on landing
+          sessionResolved = true;
+          try { subscription.unsubscribe(); } catch(e) {}
         }
       });
 
@@ -3467,9 +3481,12 @@
   async function handleLogout() {
     try {
       await initSupabase();
-      if (rpClient) await rpClient.auth.signOut();
+      if (rpClient) await rpClient.auth.signOut({ scope: 'local' });
     } catch(e) {}
-    document.body.classList.remove('logged-in');
+    // Clear any cached profile/state
+    isSubscribed = false;
+    currentProfile = {};
+    document.body.classList.remove('logged-in', 'is-subscribed');
     showLanding();
   }
 
