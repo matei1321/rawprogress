@@ -950,14 +950,6 @@
 
 
 
-  <!-- MOBILE QUICK NAV - always visible on all devices -->
-  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#1a1a1a;margin:2rem 3rem;border:1px solid #1a1a1a;">
-    <button onclick="showChallenges()" style="background:#111;padding:1.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;transition:background 0.2s;">⚡ CHALLENGES</button>
-    <button onclick="showTips()" style="background:#111;padding:1.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;transition:background 0.2s;">💡 TIPS</button>
-    <button onclick="showProfile()" style="background:#111;padding:1.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;transition:background 0.2s;">👤 PROFILE</button>
-    <button onclick="handleLogout()" style="background:#111;padding:1.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:#555;border:none;cursor:pointer;transition:background 0.2s;">🚪 LOG OUT</button>
-  </div>
-
   <!-- SOCIAL FOOTER -->
   <div class="social-footer">
     <div class="social-text">Follow the Movement</div>
@@ -3220,6 +3212,14 @@
 
   </div>
 
+
+  <!-- MOBILE QUICK NAV -->
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#1a1a1a;margin:2rem 1.5rem;border:1px solid #1a1a1a;">
+    <button onclick="showDashboard()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">🏠 DASHBOARD</button>
+    <button onclick="showChallenges()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">⚡ CHALLENGES</button>
+    <button onclick="showTips()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">💡 TIPS</button>
+    <button onclick="showProfile()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">👤 PROFILE</button>
+  </div>
 </div>
 
 <style>
@@ -4103,6 +4103,15 @@
     </div>
   </div>
 
+
+  <!-- MOBILE QUICK NAV -->
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#1a1a1a;margin:2rem 1.5rem;border:1px solid #1a1a1a;">
+    <button onclick="showDashboard()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">🏠 DASHBOARD</button>
+    <button onclick="showChallenges()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">⚡ CHALLENGES</button>
+    <button onclick="showTips()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">💡 TIPS</button>
+    <button onclick="showProfile()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">👤 PROFILE</button>
+  </div>
+
   <!-- SUBSCRIPTION MANAGEMENT -->
   <div style="padding:2.5rem 3rem;">
     <div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;color:var(--white);margin-bottom:1.5rem;">SUBSCRIPTION</div>
@@ -4443,6 +4452,14 @@
     <!-- PROGRAM OUTPUT -->
     <div id="tips-program" style="display:none;"></div>
 
+
+  <!-- MOBILE QUICK NAV -->
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#1a1a1a;margin:2rem 1.5rem;border:1px solid #1a1a1a;">
+    <button onclick="showDashboard()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">🏠 DASHBOARD</button>
+    <button onclick="showChallenges()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">⚡ CHALLENGES</button>
+    <button onclick="showTips()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">💡 TIPS</button>
+    <button onclick="showProfile()" style="background:#111;padding:1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:#fff;border:none;cursor:pointer;">👤 PROFILE</button>
+  </div>
   </div>
 </div>
 
@@ -5135,29 +5152,17 @@
 
 /* MOBILE BOTTOM NAV — ONLY on phones */
 .mobile-nav {
-  display:none;
+  display:none !important;
   position:fixed; bottom:0; left:0; right:0;
   background:#111; border-top:2px solid #e00;
   z-index:9999; padding:0.5rem 0;
   -webkit-transform: translateZ(0);
 }
-/* Show on mobile app pages via :has() - supported iOS Safari 16+ */
-@media (max-width: 1024px) {
-  body:has(#page-dashboard.active) .mobile-nav,
-  body:has(#page-challenges.active) .mobile-nav,
-  body:has(#page-tips.active) .mobile-nav,
-  body:has(#page-profile.active) .mobile-nav,
-  body:has(#page-community.active) .mobile-nav,
-  body:has(#page-chat.active) .mobile-nav,
-  body:has(#page-preferences.active) .mobile-nav,
-  body:has(#page-create-profile.active) .mobile-nav,
-  body.logged-in .mobile-nav {
-    display:flex !important;
-    flex-direction:row;
-  }
+@media only screen and (max-width: 768px) {
+  body.logged-in .mobile-nav { display:flex !important; flex-direction:row; }
 }
-@media (min-width: 1025px) {
-  .mobile-nav { display:none !important; }
+@media only screen and (max-width: 1024px) and (pointer:coarse) {
+  body.logged-in .mobile-nav { display:flex !important; flex-direction:row; }
 }
 .mobile-nav-item {
   flex:1; display:flex; flex-direction:column; align-items:center;
