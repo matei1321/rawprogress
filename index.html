@@ -1149,8 +1149,8 @@
   var currentMode = 'daily';
   var activeFilters = { cat: '', diff: '' };
   var currentIndex = 0;
-  var currentDailyCat = window.currentDailyCat = '';
-  var currentDailyDiff = window.currentDailyDiff = '';
+  var currentDailyCat = '';
+  var currentDailyDiff = '';
 
   // Global daily challenge functions - defined early so HTML onclick can find them
   window.completeDailyCP = function(id) {
@@ -2415,20 +2415,13 @@
       if (filtersArea) filtersArea.style.display = 'none';
       const dailySelectorArea = document.getElementById('cp-daily-selector');
       if (dailySelectorArea) dailySelectorArea.style.display = 'block';
-      // Ensure daily card is visible
-      const dailyCard = document.getElementById('cp-daily-card');
-      if (dailyCard) dailyCard.style.display = 'block';
-      // Render with retry until allChallenges is loaded
-      var _renderAttempts = 0;
-      var _tryRender = function() {
-        _renderAttempts++;
-        if (window.allChallenges && window.allChallenges.daily && window.allChallenges.daily.length) {
-          if (typeof window.renderDailyCard === 'function') window.renderDailyCard();
-        } else if (_renderAttempts < 20) {
-          setTimeout(_tryRender, 150);
-        }
-      };
-      _tryRender();
+      if (typeof showRandomDailyChallenge === 'function') {
+        showRandomDailyChallenge();
+      } else {
+        setTimeout(function() { 
+          if (typeof showRandomDailyChallenge === 'function') showRandomDailyChallenge(); 
+        }, 300);
+      }
     } else if (mode === 'weekly') {
       const ds = document.getElementById('cp-daily-selector');
       if (ds) ds.style.display = 'none';
@@ -2903,20 +2896,14 @@
       const userId = session.user.id;
       const today = new Date().toISOString().split('T')[0];
 
-      // Get current profile with timeout
-      const _profileTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
-      const _profileQuery = rpClient.from('profiles').select('xp, streak, last_activity').eq('user_id', userId).maybeSingle();
-      const { data: profile } = await Promise.race([_profileQuery, _profileTimeout]);
+      // Get current profile
+      const { data: profile } = await rpClient
+        .from('profiles')
+        .select('xp, streak, last_activity')
+        .eq('user_id', userId)
+        .single();
 
-      if (!profile) {
-        // Can't get profile — update UI optimistically from current displayed values
-        const curXP = parseInt(document.getElementById('stat-xp')?.textContent || '0');
-        const curStreak = parseInt(document.getElementById('stat-streak')?.textContent || '0');
-        const newXP = curXP + xpAmount;
-        updateStatUI(Math.floor(newXP / 50), curStreak, newXP);
-        showXPToast('+' + xpAmount + ' XP', curStreak);
-        return;
-      }
+      if (!profile) return;
 
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       let newStreak = profile.streak || 0;
@@ -2932,16 +2919,18 @@
       const newXP = (profile.xp || 0) + xpAmount;
       const newChallenges = Math.floor(newXP / 50);
 
-      // Update UI immediately, then save to Supabase in background
-      updateStatUI(newChallenges, newStreak, newXP);
-      showXPToast('+' + xpAmount + ' XP', newStreak);
-
-      // Save to Supabase (non-blocking)
-      rpClient.from('profiles').update({
+      // Save to Supabase
+      await rpClient.from('profiles').update({
         xp: newXP,
         streak: newStreak,
         last_activity: today
-      }).eq('user_id', userId).then(() => {}).catch(e => console.log('XP save error:', e));
+      }).eq('user_id', userId);
+
+      // Update UI
+      updateStatUI(newChallenges, newStreak, newXP);
+
+      // Show XP toast
+      showXPToast('+' + xpAmount + ' XP', newStreak);
 
     } catch(e) { console.log('XP award error:', e); }
   }
@@ -3272,14 +3261,7 @@
       const tryInit = () => {
         attempts++;
         if (window.supabase && typeof window.supabase.createClient === 'function') {
-          rpClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: {
-              autoRefreshToken: true,
-              persistSession: true,
-              detectSessionInUrl: false,
-              storageKey: 'rp_auth_token'
-            }
-          });
+          rpClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           resolve();
         } else if (attempts < 60) {
           setTimeout(tryInit, 100);
@@ -3359,7 +3341,7 @@
       // Primary: onAuthStateChange (works reliably on iOS Safari)
       const { data: { subscription } } = rpClient.auth.onAuthStateChange(async (event, session) => {
         if (sessionResolved) return;
-        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        if (event === 'SIGNED_IN' && session) {
           sessionResolved = true;
           subscription.unsubscribe();
           const name = session.user.user_metadata?.full_name || session.user.email;
@@ -3367,7 +3349,6 @@
           const avatarEl = document.getElementById('user-avatar');
           if (nameEl) nameEl.textContent = name.split(' ')[0];
           if (avatarEl) avatarEl.textContent = name[0].toUpperCase();
-          document.body.classList.add('logged-in');
           const params = new URLSearchParams(window.location.search);
           const pg = params.get('page');
           await checkSubscription(session.user.id);
@@ -3381,9 +3362,11 @@
             if (el2) el2.textContent = dateStr;
           } else if (pg === 'preferences') { showPreferences(); }
           else { showDashboard(); updateMobileNav('dashboard'); }
-        } else if (event === 'SIGNED_OUT' || (event === 'INITIAL_SESSION' && !session)) {
-          sessionResolved = true;
-          try { subscription.unsubscribe(); } catch(e) {}
+        } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+          if (!session) {
+            sessionResolved = true;
+            subscription.unsubscribe();
+          }
         }
       });
 
@@ -3409,7 +3392,7 @@
           if (el1) el1.textContent = dateStr;
           if (el2) el2.textContent = dateStr;
         } else if (pg === 'preferences') { showPreferences(); }
-        else { document.body.classList.add('logged-in'); showDashboard(); updateMobileNav('dashboard'); }
+        else { showDashboard(); updateMobileNav('dashboard'); }
       }
 
       // Safety timeout
@@ -3439,26 +3422,32 @@
     btn.disabled = true;
 
     try {
+      console.log('DEBUG: initSupabase...');
       await initSupabase();
       if (!rpClient) throw new Error('Connection failed');
+      console.log('DEBUG: calling signInWithPassword...');
 
       const { data, error } = await rpClient.auth.signInWithPassword({ email, password });
+      console.log('DEBUG: signIn result - error:', error, 'user:', data?.user?.id);
 
       if (error) {
         err.textContent = error.message === 'Invalid login credentials' ? 'Wrong email or password.' : error.message;
         err.style.display = 'block';
       } else {
+        console.log('DEBUG: login OK, calling checkSubscription...');
         const name = data.user.user_metadata?.full_name || data.user.email;
         document.getElementById('user-name').textContent = name.split(' ')[0];
         document.getElementById('user-avatar').textContent = name[0].toUpperCase();
-        document.body.classList.add('logged-in');
         await checkSubscription(data.user.id);
+        console.log('DEBUG: checkSubscription done, calling showDashboard...');
         const _p = new URLSearchParams(window.location.search).get('page');
         if (_p === 'commit') showCommit();
         else if (_p === 'preferences') showPreferences();
         else { showDashboard(); updateMobileNav('dashboard'); }
+        console.log('DEBUG: showDashboard called');
       }
     } catch(e) {
+      console.log('DEBUG: CATCH ERROR:', e.message, e.stack);
       err.textContent = '⚠ Something went wrong: ' + e.message;
       err.style.display = 'block';
     }
@@ -5136,7 +5125,7 @@
 
 }
 
-/* MOBILE BOTTOM NAV */
+/* MOBILE BOTTOM NAV — ONLY on phones */
 .mobile-nav {
   display:none;
   position:fixed; bottom:0; left:0; right:0;
@@ -5144,22 +5133,19 @@
   z-index:9999; padding:0.5rem 0;
   -webkit-transform: translateZ(0);
 }
-/* Show nav on mobile when any app page is active */
+/* Show on mobile app pages via :has() - supported iOS Safari 16+ */
 @media (max-width: 1024px) {
   body:has(#page-dashboard.active) .mobile-nav,
   body:has(#page-challenges.active) .mobile-nav,
   body:has(#page-tips.active) .mobile-nav,
   body:has(#page-profile.active) .mobile-nav,
-  body:has(#page-leaderboard.active) .mobile-nav,
   body:has(#page-community.active) .mobile-nav,
   body:has(#page-chat.active) .mobile-nav,
   body:has(#page-preferences.active) .mobile-nav,
+  body:has(#page-create-profile.active) .mobile-nav,
   body.logged-in .mobile-nav {
-    display:-webkit-box !important;
-    display:-webkit-flex !important;
     display:flex !important;
-    -webkit-flex-direction:row !important;
-    flex-direction:row !important;
+    flex-direction:row;
   }
 }
 @media (min-width: 1025px) {
@@ -5198,6 +5184,30 @@
 }
 </style>
 
+<!-- MOBILE BOTTOM NAV (shows on mobile only) -->
+<div class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-item active" onclick="showDashboard()" id="mn-dashboard">
+    <span class="mobile-nav-icon">🏠</span>
+    <span class="mobile-nav-label">Home</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showChallenges()" id="mn-challenges">
+    <span class="mobile-nav-icon">⚡</span>
+    <span class="mobile-nav-label">Challenges</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showChat(null,null)" id="mn-chat" style="position:relative;display:none !important;">
+    <span class="mobile-nav-icon">💬<span id="chat-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red);border-radius:50%;font-size:9px;color:#fff;font-weight:700;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;"></span></span>
+    <span class="mobile-nav-label">Messages</span>
+  </div>
+      
+  <div class="mobile-nav-item" onclick="showTips()" id="mn-tips">
+    <span class="mobile-nav-icon">💡</span>
+    <span class="mobile-nav-label">Tips</span>
+  </div>
+  <div class="mobile-nav-item" onclick="showProfile()" id="mn-profile">
+    <span class="mobile-nav-icon">👤</span>
+    <span class="mobile-nav-label">Profile</span>
+  </div>
+</div>
 
 <script>
   // ---- LEADERBOARD ----
@@ -5392,13 +5402,8 @@
   // ---- MOBILE NAV ----
   function updateMobileNav(page) {
     document.body.classList.add('logged-in');
-    var nav = document.getElementById('mobile-nav');
-    if (nav) {
-      // Force display directly for iOS Safari compatibility
-      nav.style.cssText = 'display:flex !important; flex-direction:row; position:fixed; bottom:0; left:0; right:0; background:#111; border-top:2px solid #e00; z-index:9999; padding:0.5rem 0; -webkit-transform:translateZ(0);';
-    }
-    document.querySelectorAll('.mobile-nav-item').forEach(function(el) { el.classList.remove('active'); });
-    var el = document.getElementById('mn-' + page);
+    document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById('mn-' + page);
     if (el) el.classList.add('active');
   }
 
@@ -5656,8 +5661,13 @@
     try {
       let userId = null, userEmail = null;
       
-      // Use existing rpClient
-      if (!window.rpClient) await initSupabase();
+      // Use existing rpClient or create new one
+      if (!window.rpClient) {
+        window.rpClient = window.supabase.createClient(
+          'https://pgiczpzqwerfnnvtpsvq.supabase.co',
+          'sb_publishable_gg5McufbFCqgka-Sl7g2bQ_f2fG6fge'
+        );
+      }
 
       try {
         const { data: { session } } = await window.rpClient.auth.getSession();
@@ -6239,18 +6249,18 @@ window.addEventListener('load', function() {
     var diffs = ['Easy','Medium','Hard'];
     
     if (filter === 'random') {
-      currentDailyCat = window.currentDailyCat = '';
-      currentDailyDiff = window.currentDailyDiff = '';
+      currentDailyCat = '';
+      currentDailyDiff = '';
       document.querySelectorAll('.cp-sel-cat, .cp-sel-diff').forEach(function(b) {
         b.style.color='#555'; b.style.borderColor='#333'; b.style.background='transparent';
       });
     } else if (cats.indexOf(filter) > -1) {
       // Category filter
       if (currentDailyCat === filter) {
-        currentDailyCat = window.currentDailyCat = '';
+        currentDailyCat = '';
         btn.style.color='#555'; btn.style.borderColor='#333'; btn.style.background='transparent';
       } else {
-        currentDailyCat = window.currentDailyCat = filter;
+        currentDailyCat = filter;
         document.querySelectorAll('.cp-sel-cat').forEach(function(b) {
           b.style.color='#555'; b.style.borderColor='#333'; b.style.background='transparent';
         });
@@ -6259,10 +6269,10 @@ window.addEventListener('load', function() {
     } else if (diffs.indexOf(filter) > -1) {
       // Difficulty filter
       if (currentDailyDiff === filter) {
-        currentDailyDiff = window.currentDailyDiff = '';
+        currentDailyDiff = '';
         btn.style.color='#555'; btn.style.borderColor='#333'; btn.style.background='transparent';
       } else {
-        currentDailyDiff = window.currentDailyDiff = filter;
+        currentDailyDiff = filter;
         document.querySelectorAll('.cp-sel-diff').forEach(function(b) {
           b.style.color='#555'; b.style.borderColor='#333'; b.style.background='transparent';
         });
@@ -6272,30 +6282,6 @@ window.addEventListener('load', function() {
     renderDailyCard();
   };
 
-  // Track current challenge index for NEXT button
-  window._rpDailyCurrentId = null;
-
-  window.nextDailyCard = function() {
-    // Clear both memory and localStorage so a new challenge is picked
-    var prevId = window._rpDailyCurrentId;
-    window._rpDailyCurrentId = null;
-    window.currentDailyChallenge = null;
-    // Clear all today's daily keys from localStorage
-    var d = new Date();
-    var prefix = 'rp_dc_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate() + '_';
-    try {
-      var toRemove = [];
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && k.indexOf(prefix) === 0) toRemove.push(k);
-      }
-      toRemove.forEach(function(k) { localStorage.removeItem(k); });
-    } catch(e) {}
-    // Store previous ID so renderDailyCard can exclude it
-    window._rpDailyPrevId = prevId;
-    window.renderDailyCard();
-  };
-
   window.renderDailyCard = function() {
     var list = (window.allChallenges && window.allChallenges.daily) ? window.allChallenges.daily : [];
     if (!list.length) {
@@ -6303,47 +6289,22 @@ window.addEventListener('load', function() {
       return;
     }
     var completed = window.completedChallenges || [];
-    var cat = window.currentDailyCat || '';
-    var diff = window.currentDailyDiff || '';
     var filtered = list.filter(function(c) {
-      var catMatch = !cat || c.cat === cat;
-      var diffMatch = !diff || c.diff === diff;
+      var catMatch = !currentDailyCat || c.cat === currentDailyCat;
+      var diffMatch = !currentDailyDiff || c.diff === currentDailyDiff;
       var notDone = !completed.includes(c.id);
       return catMatch && diffMatch && notDone;
     });
+    // If all filtered are done, show from all (ignoring done filter)
     if (!filtered.length) {
       filtered = list.filter(function(c) {
-        return (!cat || c.cat === cat) && (!diff || c.diff === diff);
+        return (!currentDailyCat || c.cat === currentDailyCat) && (!currentDailyDiff || c.diff === currentDailyDiff);
       });
     }
     if (!filtered.length) filtered = list;
     if (!filtered.length) return;
 
-    // Same challenge all day unless NEXT clicked
-    var d = new Date();
-    var dayKey = 'rp_dc_' + d.getFullYear() + '_' + (d.getMonth()+1) + '_' + d.getDate() + '_' + (cat||'X') + '_' + (diff||'X');
-    var c = null;
-    // If we have a current challenge in memory that's in filtered, keep it
-    if (window._rpDailyCurrentId) {
-      c = filtered.find(function(x) { return x.id === window._rpDailyCurrentId; });
-    }
-    // Otherwise check localStorage
-    if (!c) {
-      var savedId = null;
-      try { savedId = localStorage.getItem(dayKey); } catch(e) {}
-      if (savedId) c = filtered.find(function(x) { return String(x.id) === savedId; });
-    }
-    // Otherwise pick random and save
-    if (!c) {
-      // exclude previous challenge to ensure NEXT shows different one
-      var prevId = window._rpDailyPrevId || null;
-      var pool = prevId ? filtered.filter(function(x){ return x.id !== prevId; }) : filtered;
-      if (!pool.length) pool = filtered;
-      c = pool[Math.floor(Math.random() * pool.length)];
-      try { localStorage.setItem(dayKey, String(c.id)); } catch(e) {}
-    }
-    window._rpDailyCurrentId = c.id;
-    window.currentDailyChallenge = c;
+    var c = filtered[Math.floor(Math.random() * filtered.length)];
     var done = (window.completedChallenges || []).includes(c.id);
     var catColor = c.cat==='Fitness' ? '#cc0000' : c.cat==='Nutrition' ? '#4caf50' : '#7c6af7';
     var diffColor = c.diff==='Easy' ? '#4caf50' : c.diff==='Medium' ? '#ff9800' : '#cc0000';
@@ -6365,7 +6326,7 @@ window.addEventListener('load', function() {
             ? '<span style="font-family:Barlow Condensed,sans-serif;font-size:0.8rem;letter-spacing:2px;color:#4caf50;border:1px solid #4caf5044;padding:0.5rem 1rem;">✓ DONE</span>'
             : '<button onclick="completeDailyCP(' + c.id + ')" style="font-family:Barlow Condensed,sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:var(--red);color:#fff;border:none;padding:0.6rem 1.5rem;cursor:none;">✓ DONE</button>'
           ) +
-          '<button onclick="nextDailyCard()" style="font-family:Barlow Condensed,sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#555;border:1px solid #333;padding:0.6rem 1.5rem;cursor:none;">NEXT →</button>' +
+          '<button onclick="renderDailyCard()" style="font-family:Barlow Condensed,sans-serif;font-size:0.8rem;letter-spacing:2px;text-transform:uppercase;background:transparent;color:#555;border:1px solid #333;padding:0.6rem 1.5rem;cursor:none;">NEXT →</button>' +
         '</div>' +
       '</div>';
   };
@@ -6812,29 +6773,5 @@ window.renderProgram = function renderProgram() {
 }
 </script>
 
-<!-- MOBILE BOTTOM NAV (shows on mobile only) -->
-<div class="mobile-nav" id="mobile-nav" style="display:flex !important;flex-direction:row;position:fixed;bottom:0;left:0;right:0;background:#111;border-top:2px solid #e00;z-index:99999;padding:0.5rem 0;">
-  <div class="mobile-nav-item active" onclick="showDashboard()" id="mn-dashboard">
-    <span class="mobile-nav-icon">🏠</span>
-    <span class="mobile-nav-label">Home</span>
-  </div>
-  <div class="mobile-nav-item" onclick="showChallenges()" id="mn-challenges">
-    <span class="mobile-nav-icon">⚡</span>
-    <span class="mobile-nav-label">Challenges</span>
-  </div>
-  <div class="mobile-nav-item" onclick="showChat(null,null)" id="mn-chat" style="position:relative;display:none !important;">
-    <span class="mobile-nav-icon">💬<span id="chat-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red);border-radius:50%;font-size:9px;color:#fff;font-weight:700;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;"></span></span>
-    <span class="mobile-nav-label">Messages</span>
-  </div>
-      
-  <div class="mobile-nav-item" onclick="showTips()" id="mn-tips">
-    <span class="mobile-nav-icon">💡</span>
-    <span class="mobile-nav-label">Tips</span>
-  </div>
-  <div class="mobile-nav-item" onclick="showProfile()" id="mn-profile">
-    <span class="mobile-nav-icon">👤</span>
-    <span class="mobile-nav-label">Profile</span>
-  </div>
-</div>
 </body>
 </html>
