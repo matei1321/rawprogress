@@ -1054,6 +1054,9 @@
      showPage('page-landing'); }
   function showDashboard() {
     document.body.classList.add('logged-in');
+    // Show mobile nav directly
+    var _nav = document.getElementById('mobile-nav');
+    if (_nav) { _nav.style.setProperty('display','flex','important'); _nav.style.flexDirection='row'; }
     showPage('page-dashboard');
     setDashDate();
     document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active-link'));
@@ -1076,6 +1079,9 @@
     })();
   }
   function showChallenges() {
+    document.body.classList.add('logged-in');
+    var _nav = document.getElementById('mobile-nav');
+    if (_nav) { _nav.style.setProperty('display','flex','important'); _nav.style.flexDirection='row'; }
     showPage('page-challenges');
     syncNavAvatars();
     document.querySelectorAll('.dash-nav-link').forEach(l => l.classList.remove('active-link'));
@@ -5169,16 +5175,17 @@
 
 /* MOBILE BOTTOM NAV — ONLY on phones */
 .mobile-nav {
-  display:none !important;
+  display:none;
   position:fixed; bottom:0; left:0; right:0;
   background:#111; border-top:2px solid #e00;
   z-index:9999; padding:0.5rem 0;
   -webkit-transform: translateZ(0);
 }
-@media only screen and (max-width: 768px) {
+/* Show on all touch/mobile devices when on app pages */
+@media (max-width: 1024px) {
   body.logged-in .mobile-nav { display:flex !important; flex-direction:row; }
 }
-@media only screen and (max-width: 1024px) and (pointer:coarse) {
+@media (pointer: coarse) {
   body.logged-in .mobile-nav { display:flex !important; flex-direction:row; }
 }
 .mobile-nav-item {
@@ -5432,6 +5439,12 @@
   // ---- MOBILE NAV ----
   function updateMobileNav(page) {
     document.body.classList.add('logged-in');
+    // Force show nav directly via JS — no CSS dependency
+    const nav = document.getElementById('mobile-nav');
+    if (nav) {
+      nav.style.setProperty('display', 'flex', 'important');
+      nav.style.flexDirection = 'row';
+    }
     document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
     const el = document.getElementById('mn-' + page);
     if (el) el.classList.add('active');
